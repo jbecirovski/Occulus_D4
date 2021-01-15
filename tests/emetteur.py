@@ -21,7 +21,7 @@ connection, address = skt.accept()
 
 with connection:
     while True:
-        print("Connexion établie par: " + address)
+        print("Connexion établie par: ", address)
         data = connection.recv(1024)
         if not data:
             break
