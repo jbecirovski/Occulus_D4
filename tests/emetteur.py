@@ -1,10 +1,10 @@
 # script pour tester la communication Wi-Fi de l'emetteur
 
 import socket
-import functions
+from functions import get_wifi_ip_address
 
 # to get local IP address of WiFi connection
-localIP = functions.get_wifi_ip_address()
+localIP = get_wifi_ip_address()
 print(localIP)
 
 # create socket for communication (BLOCKING FOR NOW)
