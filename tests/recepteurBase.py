@@ -20,10 +20,11 @@ skt.bind((localIP, 61515))
 
 # connect the socket to the host
 skt.connect((HOST[0], PORT))
-skt.sendall(b'Hello, world')
+skt.sendall(b"Music")
 data = skt.recv(1024)
 
-print('Received', repr(data))
+data = data.decode('utf-8')
+print("Received", data)
 
 skt.shutdown(socket.SHUT_RDWR)
 skt.close()

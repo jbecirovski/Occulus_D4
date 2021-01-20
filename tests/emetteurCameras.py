@@ -1,5 +1,6 @@
-# script pour tester la communication Wi-Fi de l'emetteur
+# script pour tester la communication Wi-Fi de l"emetteur
 
+# TODO Regarder pour mettre le process en sleep lorsque pas actif (pendant qu"il n"y a aucune connexion)?
 import socket
 from other.functions import get_wifi_ip_address
 
@@ -24,6 +25,12 @@ while True:
     with connection:
         print("Connexion établie par: ", address[0], "sur le socket du récepteur ", address[1])
         data = connection.recv(1024)
-        if not data:
+        if data == b"Hello, world":
+            data = b"Hello world, my name is dad!"
+        elif data == b"Movie":
+            data = b"My favorite movie is Interstellar"
+        elif data == b"Music":
+            data = b"I've been playing piano for the past 12 years"
+        else:
             break
         connection.sendall(data)
