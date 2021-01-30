@@ -1,4 +1,6 @@
 import sys
+import socket
+import other.functions
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
@@ -11,6 +13,22 @@ class Window(QtWidgets.QMainWindow):
         self.setFixedWidth(1200)
         self.setWindowTitle("Application Camera")
         self.setWindowIcon(QtGui.QIcon("ressource/protolabLogo.png"))
+
+        # initialisation du port de communication
+        localIP = other.functions.get_wifi_ip_address()
+
+        # initialisation des variables constantes
+        # TODO à changer pour faire un scan de toutes les caméras existantes au lancement
+        HOSTS = ['192.168.50.160', '192.168.50.161']
+        PORT = 60000
+
+        # création du socket de communication (BLOCKING for now)
+        # TODO voir si on doit le garder en blocking si plusieurs cameras ou envoi des images
+        skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # TODO À voir si ça affecte les performances lors de l'envoi de gros fichiers (images)
+        # bind un port pour que l'hôte utilise toujours le même port(éviter création trop ports différents)
+        skt.bind((localIP, 61515))
 
         QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
         extract_action = QtWidgets.QAction("Setting", self)
