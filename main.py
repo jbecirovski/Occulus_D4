@@ -97,7 +97,7 @@ class Window(QtWidgets.QMainWindow):
         btn_start_all_camera.move(20, 645)
 
         btn_manage_files = QtWidgets.QPushButton("Manage Files", self)
-        btn_manage_files.clicked.connect(self.startAllCamera)
+        btn_manage_files.clicked.connect(self.manage_files)
         btn_manage_files.resize(120, 60)
         btn_manage_files.move(20, 570)
 
