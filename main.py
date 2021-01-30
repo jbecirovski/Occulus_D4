@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import QMessageBox
 
 class Window(QtWidgets.QMainWindow):
 
+    activeCamera = ""
+
     def __init__(self):
         super(Window, self).__init__()
         self.setFixedHeight(800)
@@ -33,7 +35,7 @@ class Window(QtWidgets.QMainWindow):
         QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
         extract_action = QtWidgets.QAction("Setting", self)
         extract_action.setShortcut("Ctrl+X")
-        extract_action.triggered.connect(self.fermetureApplication)
+        extract_action.triggered.connect(self.close_application)
         extract_action1 = QtWidgets.QAction("Style", self)
         extract_action1.triggered.connect(self.style_pop_up)
 
@@ -65,7 +67,7 @@ class Window(QtWidgets.QMainWindow):
 
     def home(self):
         btn_quit = QtWidgets.QPushButton("Quit", self)
-        btn_quit.clicked.connect(self.fermetureApplication)
+        btn_quit.clicked.connect(self.close_application)
         btn_quit.resize(200, 100)
         btn_quit.move(980, 680)
 
@@ -73,26 +75,27 @@ class Window(QtWidgets.QMainWindow):
         camera_combo_box.addItem("Camera 1")
         camera_combo_box.addItem("Camera 2")
         camera_combo_box.addItem("Camera 3")
+        camera_combo_box.setCurrentText("Camera 1")
         camera_combo_box.move(20, 50)
-        camera_combo_box.activated.connect(self.choose_camera_combo_box)
+        camera_combo_box.activated.connect(self.choose_camera)
 
         btn_detect_cameras = QtWidgets.QPushButton("Detect Cameras", self)
-        btn_detect_cameras.clicked.connect(self.btn_detect_cameras)
+        btn_detect_cameras.clicked.connect(self.detect_cameras)
         btn_detect_cameras.resize(100, 40)
         btn_detect_cameras.move(20, 100)
 
         btn_start_camera = QtWidgets.QPushButton("Start Camera", self)
-        btn_start_camera.clicked.connect(self.btn_start_camera)
+        btn_start_camera.clicked.connect(self.start_camera)
         btn_start_camera.resize(100, 40)
         btn_start_camera.move(20, 150)
 
         btn_stop_camera = QtWidgets.QPushButton("Stop Camera", self)
-        btn_stop_camera.clicked.connect(self.btn_stop_camera)
+        btn_stop_camera.clicked.connect(self.stop_camera)
         btn_stop_camera.resize(100, 40)
         btn_stop_camera.move(20, 200)
 
         btn_start_all_camera = QtWidgets.QPushButton("Start All Camera", self)
-        btn_start_all_camera.clicked.connect(self.startAllCamera)
+        btn_start_all_camera.clicked.connect(self.start_cameras)
         btn_start_all_camera.resize(120, 60)
         btn_start_all_camera.move(20, 645)
 
@@ -102,29 +105,29 @@ class Window(QtWidgets.QMainWindow):
         btn_manage_files.move(20, 570)
 
         btn_stop_all_camera = QtWidgets.QPushButton("Stop All Camera", self)
-        btn_stop_all_camera.clicked.connect(self.stopAllCamera)
+        btn_stop_all_camera.clicked.connect(self.stop_cameras)
         btn_stop_all_camera.resize(120, 60)
         btn_stop_all_camera.move(20, 720)
 
         btn_up_arrow = QtWidgets.QToolButton(self)
         btn_up_arrow.setArrowType(QtCore.Qt.UpArrow)
         btn_up_arrow.setGeometry(1060, 500, 30, 30)
-        btn_up_arrow.clicked.connect(self.btn_up_arrow)
+        btn_up_arrow.clicked.connect(self.up_arrow)
 
         btn_left_arrow = QtWidgets.QToolButton(self)
         btn_left_arrow.setArrowType(QtCore.Qt.LeftArrow)
         btn_left_arrow.setGeometry(1005, 550, 30, 30)
-        btn_left_arrow.clicked.connect(self.btn_left_arrow)
+        btn_left_arrow.clicked.connect(self.left_arrow)
 
         btn_right_arrow = QtWidgets.QToolButton(self)
         btn_right_arrow.setArrowType(QtCore.Qt.RightArrow)
         btn_right_arrow.setGeometry(1115, 550, 30, 30)
-        btn_right_arrow.clicked.connect(self.btn_right_arrow)
+        btn_right_arrow.clicked.connect(self.right_arrow)
 
         btn_down_arrow = QtWidgets.QToolButton(self)
         btn_down_arrow.setArrowType(QtCore.Qt.DownArrow)
         btn_down_arrow.setGeometry(1060, 600, 30, 30)
-        btn_down_arrow.clicked.connect(self.btn_down_arrow)
+        btn_down_arrow.clicked.connect(self.down_arrow)
 
         info = QtWidgets.QLabel(self)
         info.setText(" Info\n Nom de la camera:\n Batterie restante:")
@@ -141,23 +144,26 @@ class Window(QtWidgets.QMainWindow):
 
         self.show()
 
-    def choose_camera_combo_box(self):
-        print("hey")
+        # mise de la caméra active à la valeur par défaut de l'application
+        Window.activeCamera = "Camera 1"
+
+    def choose_camera(self):
+        print(Window.activeCamera)
         pass
 
-    def btn_start_camera(self):
+    def start_camera(self):
         print("Record debuter d'une camera")
         pass
 
-    def btn_detect_cameras(self):
+    def detect_cameras(self):
         print("Detection des cameras")
         pass
 
-    def btn_stop_camera(self):
+    def stop_camera(self):
         print("Arret de l'enregistrement")
         pass
 
-    def startAllCamera(self):
+    def start_cameras(self):
         print("Record debuter de toute les cameras")
         pass
 
@@ -165,11 +171,11 @@ class Window(QtWidgets.QMainWindow):
         print("Managing files")
         pass
 
-    def stopAllCamera(self):
+    def stop_cameras(self):
         print("Arret du record de toute les cameras")
         pass
 
-    def fermetureApplication(self):
+    def close_application(self):
         choice = QtWidgets.QMessageBox.question(self,
                                                 "Extract!",
                                                 "Are you sure you want to quit",
@@ -180,24 +186,24 @@ class Window(QtWidgets.QMainWindow):
         else:
             pass
 
-    def closeEvent(self, event):
+    def close_event(self, event):
         event.ignore()
-        self.fermetureApplication()
+        self.close_application()
 
-    def btn_up_arrow(self):
+    def up_arrow(self):
         print("Up")
         pass
 
-    def btn_right_arrow(self):
+    def right_arrow(self):
         print("Right")
         pass
 
-    def btn_left_arrow(self):
+    def left_arrow(self):
         print("Left")
         pass
 
-    def btn_down_arrow(self):
-        print("down")
+    def down_arrow(self):
+        print("Down")
         pass
 
     def style_pop_up(self):
@@ -207,7 +213,6 @@ class Window(QtWidgets.QMainWindow):
         msg.setText("Choose the window style")
         msg.setStandardButtons(QMessageBox.Apply | QMessageBox.Cancel)
         x = msg.exec()
-
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
