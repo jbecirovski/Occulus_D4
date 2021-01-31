@@ -1,6 +1,6 @@
 import sys
 import socket
-import other.functions
+import code
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
@@ -19,7 +19,7 @@ class Window(QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon("ressource/protolabLogo.png"))
 
         # initialisation du port de communication
-        localIP = other.functions.get_wifi_ip_address()
+        localIP = code.other.functions.get_wifi_ip_address()
 
         # initialisation des variables constantes
         # TODO à changer pour faire un scan de toutes les caméras existantes au lancement
