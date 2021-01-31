@@ -1,14 +1,14 @@
-import sys
 import socket
-from code.other.functions import get_wifi_ip_address
+import sys
+import os
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
+from src.other.functions import get_wifi_ip_address, close_port
+
 
 class Window(QtWidgets.QMainWindow):
-
-    # paramètre de la classe
-    activeCamera = ""
 
     # contructeur de la classe
     def __init__(self):
@@ -18,24 +18,24 @@ class Window(QtWidgets.QMainWindow):
         self.setWindowTitle("Application Camera")
         self.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
 
+        # paramètre de la classe
+        self.activeCamera = 0
+
         # initialisation du port de communication
-        localIP = get_wifi_ip_address()
+        self.localIP = get_wifi_ip_address()
 
         # initialisation des variables constantes
         # TODO à changer pour faire un scan de toutes les caméras existantes au lancement
-        HOSTS = ['192.168.50.160', '192.168.50.161']
-        PORT = 60000
+        self.HOSTS = ['192.168.50.160', '192.168.50.161']
+        self.PORT = 60000
 
         # création du socket de communication (BLOCKING for now)
         # TODO voir si on doit le garder en blocking si plusieurs cameras ou envoi des images
-        skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # TODO À voir si ça affecte les performances lors de l'envoi de gros fichiers (images)
         # bind un port pour que l'hôte utilise toujours le même port(éviter création trop ports différents)
-        skt.bind((localIP, 61515))
-
-        # mise de la caméra active à la valeur par défaut de l'application
-        Window.activeCamera = "Camera 1"
+        self.skt.bind((self.localIP, 61515))
 
         # déclaration des différents composants de l'interface graphique
         self.btn_quit = QtWidgets.QPushButton("Quit", self)
@@ -47,9 +47,13 @@ class Window(QtWidgets.QMainWindow):
         self.btn_manage_files = QtWidgets.QPushButton("Manage Files", self)
         self.btn_stop_all_camera = QtWidgets.QPushButton("Stop All Camera", self)
         self.btn_up_arrow = QtWidgets.QToolButton(self)
+        self.moveup_key = QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Up), self)
         self.btn_left_arrow = QtWidgets.QToolButton(self)
+        self.moveleft_key = QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Left), self)
         self.btn_right_arrow = QtWidgets.QToolButton(self)
+        self.moveright_key = QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right), self)
         self.btn_down_arrow = QtWidgets.QToolButton(self)
+        self.movedown_key = QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Down), self)
         self.info = QtWidgets.QLabel(self)
         self.preview = QtWidgets.QLabel(self)
         self.statusBar()
@@ -96,20 +100,24 @@ class Window(QtWidgets.QMainWindow):
         self.btn_up_arrow.setArrowType(QtCore.Qt.UpArrow)
         self.btn_up_arrow.setGeometry(1060, 500, 30, 30)
         self.btn_up_arrow.clicked.connect(self.up_arrow)
+        self.moveup_key.activated.connect(self.up_arrow)
 
         self.btn_left_arrow.setArrowType(QtCore.Qt.LeftArrow)
         self.btn_left_arrow.setGeometry(1005, 550, 30, 30)
         self.btn_left_arrow.clicked.connect(self.left_arrow)
+        self.moveleft_key.activated.connect(self.left_arrow)
 
         self.btn_right_arrow.setArrowType(QtCore.Qt.RightArrow)
         self.btn_right_arrow.setGeometry(1115, 550, 30, 30)
         self.btn_right_arrow.clicked.connect(self.right_arrow)
+        self.moveright_key.activated.connect(self.right_arrow)
 
         self.btn_down_arrow.setArrowType(QtCore.Qt.DownArrow)
         self.btn_down_arrow.setGeometry(1060, 600, 30, 30)
         self.btn_down_arrow.clicked.connect(self.down_arrow)
+        self.movedown_key.activated.connect(self.down_arrow)
 
-        self.info.setText(" Informations:\n Nom de la camera:\n Batterie restante:")
+        self.info.setText(" Informations\n Nom de la camera:\n Batterie restante:")
         self.info.setStyleSheet("border: 2px solid grey;")
         self.info.resize(200, 100)
         self.info.move(950, 50)
@@ -126,6 +134,7 @@ class Window(QtWidgets.QMainWindow):
         extract_action.setShortcut("Ctrl+X")
         extract_action.triggered.connect(self.close_application)
         extract_action1 = QtWidgets.QAction("Style", self)
+        extract_action1.setShortcut("Ctrl+M")
         extract_action1.triggered.connect(self.style_pop_up)
 
         file_menu = self.main_menu.addMenu('&File')
@@ -151,42 +160,67 @@ class Window(QtWidgets.QMainWindow):
 
     # méthodes de classe
     def choose_camera(self):
-        print(Window.activeCamera)
-        Window.activeCamera = self.camera_combo_box.currentText()
-        print(Window.activeCamera)
-        pass
+        print(self.activeCamera)
+        self.activeCamera = self.camera_combo_box.currentIndex()
+        print(self.activeCamera)
 
     def start_camera(self):
-        print("Record debuter d'une camera")
-        pass
+        ip = self.HOSTS[self.activeCamera]
+        self.skt.connect((ip, self.PORT))
+        self.skt.send(b"start_camera")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)
 
     def detect_cameras(self):
-        print("Detection des cameras")
-        pass
+        network = self.localIP.split('.')
+        network = network[0] + '.' + network[1] + '.' + network[2] + '.'
+        cmd = "ping -n 1 "
+        for i in range(0, 256):
+            ip = network + str(i)
+            comm = cmd + ip
+            rep = os.popen(comm)
+            for line in rep.readlines():
+                if line.count("TTL"):
+                    break
+                if line.count("TTL"):
+                    print(network + ip, "--> Live")
 
     def stop_camera(self):
-        print("Arret de l'enregistrement")
-        pass
+        ip = self.HOSTS[self.activeCamera]
+        self.skt.connect((ip, self.PORT))
+        self.skt.send(b"stop_camera")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)
 
     def start_cameras(self):
-        print("Record debuter de toute les cameras")
-        pass
+        for i in range(len(self.HOSTS)):
+            ip = self.HOSTS[i]
+            self.skt.connect((ip, self.PORT))
+            self.skt.send(b"start_camera")
+            data = self.skt.recv(1024)
+            data = data.decode('utf-8')
+            print(data)
 
     def manage_files(self):
         print("Managing files")
         pass
 
     def stop_cameras(self):
-        print("Arret du record de toute les cameras")
-        pass
+        for i in range(len(self.HOSTS)):
+            ip = self.HOSTS[i]
+            self.skt.connect((ip, self.PORT))
+            self.skt.send(b"stop_camera")
+            data = self.skt.recv(1024)
+            data = data.decode('utf-8')
+            print(data)
 
     def close_application(self):
-        choice = QtWidgets.QMessageBox.question(self,
-                                                "Extract!",
-                                                "Are you sure you want to quit",
-                                                QtWidgets.QMessageBox.Yes |
-                                                QtWidgets.QMessageBox.No)
+        choice = QtWidgets.QMessageBox.question(self, "Extract!", "Are you sure you want to quit",
+                                                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
+            close_port(self.skt)
             sys.exit()
         else:
             pass
@@ -196,20 +230,40 @@ class Window(QtWidgets.QMainWindow):
         self.close_application()
 
     def up_arrow(self):
-        print("Up")
-        pass
+        """ip = self.HOSTS[self.activeCamera]
+        self.skt.connect((ip, self.PORT))
+        self.skt.send(b"move_up")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)"""
+        print("up")
 
     def right_arrow(self):
-        print("Right")
-        pass
+        """ip = self.HOSTS[self.activeCamera]
+        self.skt.connect((ip, self.PORT))
+        self.skt.send(b"move_right")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)"""
+        print("right")
 
     def left_arrow(self):
-        print("Left")
-        pass
+        """ip = self.HOSTS[self.activeCamera]
+        self.skt.connect((ip, self.PORT))
+        self.skt.send(b"move_left")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)"""
+        print("left")
 
     def down_arrow(self):
-        print("Down")
-        pass
+        """ip = self.HOSTS[self.activeCamera]
+        self.skt.connect((ip, self.PORT))
+        self.skt.send(b"move_down")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)"""
+        print("down")
 
     def style_pop_up(self):
         msg = QMessageBox()
