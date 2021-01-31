@@ -1,6 +1,6 @@
 import sys
 import socket
-import code
+from code.other.functions import get_wifi_ip_address
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
@@ -16,10 +16,10 @@ class Window(QtWidgets.QMainWindow):
         self.setFixedHeight(800)
         self.setFixedWidth(1200)
         self.setWindowTitle("Application Camera")
-        self.setWindowIcon(QtGui.QIcon("ressource/protolabLogo.png"))
+        self.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
 
         # initialisation du port de communication
-        localIP = code.other.functions.get_wifi_ip_address()
+        localIP = get_wifi_ip_address()
 
         # initialisation des variables constantes
         # TODO à changer pour faire un scan de toutes les caméras existantes au lancement
@@ -117,7 +117,7 @@ class Window(QtWidgets.QMainWindow):
         self.preview.move(200, 100)
         self.preview.resize(700, 600)
         self.preview.setAlignment(QtCore.Qt.AlignCenter)
-        self.preview.setPixmap(QtGui.QPixmap("ressource/protolabLogo.png"))
+        self.preview.setPixmap(QtGui.QPixmap(r"ressource/protolabLogo.png"))
         self.preview.setStyleSheet("border: 2px solid grey;")
 
         QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
