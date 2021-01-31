@@ -7,8 +7,10 @@ from PyQt5.QtWidgets import QMessageBox
 
 class Window(QtWidgets.QMainWindow):
 
+    # paramètre de la classe
     activeCamera = ""
 
+    # contructeur de la classe
     def __init__(self):
         super(Window, self).__init__()
         self.setFixedHeight(800)
@@ -32,40 +34,11 @@ class Window(QtWidgets.QMainWindow):
         # bind un port pour que l'hôte utilise toujours le même port(éviter création trop ports différents)
         skt.bind((localIP, 61515))
 
-        QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
-        extract_action = QtWidgets.QAction("Setting", self)
-        extract_action.setShortcut("Ctrl+X")
-        extract_action.triggered.connect(self.close_application)
-        extract_action1 = QtWidgets.QAction("Style", self)
-        extract_action1.triggered.connect(self.style_pop_up)
+        # mise de la caméra active à la valeur par défaut de l'application
+        Window.activeCamera = "Camera 1"
 
-        self.statusBar()
-        main_menu = self.menuBar()
-        file_menu = main_menu.addMenu('&File')
-        file_menu.addAction(extract_action)
-        file_menu = main_menu.addMenu('&Edit')
-        file_menu.addAction(extract_action1)
-
-        # Édition du style de la fenêtre
-        palette = QtGui.QPalette()
-        palette.setColor(QtGui.QPalette.Window, QtGui.QColor(53, 53, 53))
-        palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.darkGray)
-        palette.setColor(QtGui.QPalette.Base, QtGui.QColor(25, 25, 25))
-        palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(53, 53, 53))
-        palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.darkGray)
-        palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
-        palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
-        palette.setColor(QtGui.QPalette.Button, QtGui.QColor(53, 53, 53))
-        palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
-        palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
-        palette.setColor(QtGui.QPalette.Link, QtGui.QColor(42, 130, 218))
-        palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
-        palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.darkRed)
-        QtWidgets.qApp.setPalette(palette)
-
-        self.home()
-
-    def home(self):
+    # création de l'interface
+    def create_ui(self):
         btn_quit = QtWidgets.QPushButton("Quit", self)
         btn_quit.clicked.connect(self.close_application)
         btn_quit.resize(200, 100)
@@ -130,7 +103,7 @@ class Window(QtWidgets.QMainWindow):
         btn_down_arrow.clicked.connect(self.down_arrow)
 
         info = QtWidgets.QLabel(self)
-        info.setText(" Info\n Nom de la camera:\n Batterie restante:")
+        info.setText(" Informations\n Nom de la camera:\n Batterie restante:")
         info.setStyleSheet("border: 2px solid grey;")
         info.resize(200, 100)
         info.move(950, 50)
@@ -142,11 +115,38 @@ class Window(QtWidgets.QMainWindow):
         preview.setPixmap(QtGui.QPixmap("ressource/protolabLogo.png"))
         preview.setStyleSheet("border: 2px solid grey;")
 
-        self.show()
+        QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
+        extract_action = QtWidgets.QAction("Setting", self)
+        extract_action.setShortcut("Ctrl+X")
+        extract_action.triggered.connect(self.close_application)
+        extract_action1 = QtWidgets.QAction("Style", self)
+        extract_action1.triggered.connect(self.style_pop_up)
 
-        # mise de la caméra active à la valeur par défaut de l'application
-        Window.activeCamera = "Camera 1"
+        self.statusBar()
+        main_menu = self.menuBar()
+        file_menu = main_menu.addMenu('&File')
+        file_menu.addAction(extract_action)
+        file_menu = main_menu.addMenu('&Edit')
+        file_menu.addAction(extract_action1)
 
+        # Édition du style de la fenêtre
+        palette = QtGui.QPalette()
+        palette.setColor(QtGui.QPalette.Window, QtGui.QColor(53, 53, 53))
+        palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.darkGray)
+        palette.setColor(QtGui.QPalette.Base, QtGui.QColor(25, 25, 25))
+        palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(53, 53, 53))
+        palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.darkGray)
+        palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
+        palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
+        palette.setColor(QtGui.QPalette.Button, QtGui.QColor(53, 53, 53))
+        palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
+        palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
+        palette.setColor(QtGui.QPalette.Link, QtGui.QColor(42, 130, 218))
+        palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
+        palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.darkRed)
+        QtWidgets.qApp.setPalette(palette)
+
+    #méthodes de classe
     def choose_camera(self):
         print(Window.activeCamera)
         pass
@@ -214,10 +214,10 @@ class Window(QtWidgets.QMainWindow):
         msg.setStandardButtons(QMessageBox.Apply | QMessageBox.Cancel)
         x = msg.exec()
 
-def main():
-    app = QtWidgets.QApplication(sys.argv)
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication([])
     gui = Window()
+    gui.create_ui()
+    gui.show()
     sys.exit(app.exec_())
-
-
-main()
