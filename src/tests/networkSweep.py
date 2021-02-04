@@ -1,47 +1,61 @@
 import multiprocessing
+import os
+import queue
+import threading
 from src.other.functions import sweep_network, get_wifi_ip_address
 
 if __name__ == '__main__':
     # scanner naïf des adresses ip
     ip = get_wifi_ip_address()
-    print(ip)
     ip = ip.split('.')
     network = ip[0] + '.' + ip[1] + '.' + ip[2] + '.'
-    print(network)
 
     """cmd = "ping -n 1 "
-    for i in range(100, 120):
+    for i in range(10, 20):
         ip = network + str(i)
         comm = cmd + ip
         rep = os.popen(comm)
-    
-        for line in rep.readlines():
-            if line.count("TTL"):
-                break
-            if line.count("TTL"):
-                print(ip, "--> Live")
-    """
+        # pour avoir seulement l'élément de réponse voulue
+        response = rep.readlines()[2]
+        if response.find(ip) != -1:
+            print(ip + " was found on network!")
 
-    # version multitaskée/threadée du scan d'adresses ip
-    POOL_SIZE = 20
+    # version multitaskée du scan d'adresses ip
+    POOL_SIZE = 10
 
     jobs = multiprocessing.Queue()
     results = multiprocessing.Queue()
 
     pool = [multiprocessing.Process(target=sweep_network, args=(jobs, results)) for i in range(POOL_SIZE)]
 
-    for p in pool:
-        p.start()
+    for process in pool:
+        process.start()
 
-    for i in range(100, 140):
+    for i in range(10, 20):
         jobs.put(network + str(i))
 
-    for p in pool:
+    for process in pool:
         jobs.put(None)
 
-    for p in pool:
-        p.join()
+    for process in pool:
+        process.join()
 
     while not results.empty():
         ip = results.get()
-        print(ip)
+        print(ip)"""
+
+    # version avec threads du scan de network
+    size = 20
+    jobs = queue.Queue()
+
+    for i in range(size):
+        jobs.put(network + str(i))
+
+    thread = threading.Thread(target=sweep_network, args=(jobs,), daemon=True)
+    thread.start()
+
+    jobs.join()
+
+
+
+
