@@ -1,5 +1,7 @@
 # script de définition des fonctions
 import socket
+import os
+import subprocess
 
 
 # fonction pour trouver l'adresse ip locale
@@ -20,3 +22,18 @@ def close_port(skt: socket):
     except OSError:
         pass
     skt.close()
+
+
+# fonction pour faire le ping multiprocess
+def sweep_network(job_queue, results_queue):
+    # ouvrir le null pour écriture
+    DEVNULL = open(os.devnull, 'w')
+    while True:
+        ip = job_queue.get()
+        if ip is None:
+            break
+        try:
+            subprocess.check_call(['ping', '-c1', ip], stdout=DEVNULL)
+            results_queue.put(ip)
+        except:
+            pass

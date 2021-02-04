@@ -56,6 +56,7 @@ class Window(QtWidgets.QMainWindow):
         self.movedown_key = QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Down), self)
         self.info = QtWidgets.QLabel(self)
         self.preview = QtWidgets.QLabel(self)
+        self.preview_button = QtWidgets.QToolButton(self)
         self.statusBar()
         self.main_menu = self.menuBar()
         self.palette = QtGui.QPalette()
@@ -128,6 +129,11 @@ class Window(QtWidgets.QMainWindow):
         self.preview.setPixmap(QtGui.QPixmap(r"ressource/protolabLogo.png"))
         self.preview.setStyleSheet("border: 2px solid grey;")
 
+        self.preview_button.setText("Start preview")
+        self.preview_button.move(490, 720)
+        self.preview_button.resize(120, 60)
+        self.preview_button.clicked.connect(self.start_preview)
+
         QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
 
         extract_action = QtWidgets.QAction("Setting", self)
@@ -159,6 +165,9 @@ class Window(QtWidgets.QMainWindow):
         QtWidgets.qApp.setPalette(self.palette)
 
     # méthodes de classe
+    def start_preview(self):
+        print("Start preview!")
+
     def choose_camera(self):
         print(self.activeCamera)
         self.activeCamera = self.camera_combo_box.currentIndex()
@@ -173,7 +182,7 @@ class Window(QtWidgets.QMainWindow):
         print(data)
 
     def detect_cameras(self):
-        network = self.localIP.split('.')
+       """ network = self.localIP.split('.')
         network = network[0] + '.' + network[1] + '.' + network[2] + '.'
         cmd = "ping -n 1 "
         for i in range(0, 256):
@@ -185,6 +194,7 @@ class Window(QtWidgets.QMainWindow):
                     break
                 if line.count("TTL"):
                     print(network + ip, "--> Live")
+        """
 
     def stop_camera(self):
         ip = self.HOSTS[self.activeCamera]
