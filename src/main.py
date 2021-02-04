@@ -174,57 +174,61 @@ class Window(QtWidgets.QMainWindow):
         print(self.activeCamera)
 
     def start_camera(self):
-        ip = self.HOSTS[self.activeCamera]
+        """ip = self.HOSTS[self.activeCamera]
         self.skt.connect((ip, self.PORT))
         self.skt.send(b"start_camera")
         data = self.skt.recv(1024)
         data = data.decode('utf-8')
-        print(data)
+        print(data)"""
+        print("Starting camera: " + str(self.activeCamera + 1))
 
     def detect_cameras(self):
-       """ network = self.localIP.split('.')
-        network = network[0] + '.' + network[1] + '.' + network[2] + '.'
-        cmd = "ping -n 1 "
-        for i in range(0, 256):
-            ip = network + str(i)
-            comm = cmd + ip
-            rep = os.popen(comm)
-            for line in rep.readlines():
-                if line.count("TTL"):
-                    break
-                if line.count("TTL"):
-                    print(network + ip, "--> Live")
-        """
+        print("Detect cameras!")
+        """ network = self.localIP.split('.')
+         network = network[0] + '.' + network[1] + '.' + network[2] + '.'
+         cmd = "ping -n 1 "
+         for i in range(0, 256):
+             ip = network + str(i)
+             comm = cmd + ip
+             rep = os.popen(comm)
+             for line in rep.readlines():
+                 if line.count("TTL"):
+                     break
+                 if line.count("TTL"):
+                     print(network + ip, "--> Live")
+         """
 
     def stop_camera(self):
-        ip = self.HOSTS[self.activeCamera]
+        """ip = self.HOSTS[self.activeCamera]
         self.skt.connect((ip, self.PORT))
         self.skt.send(b"stop_camera")
         data = self.skt.recv(1024)
         data = data.decode('utf-8')
-        print(data)
+        print(data)"""
+        print("Stop camera: " + str(self.activeCamera + 1))
 
     def start_cameras(self):
-        for i in range(len(self.HOSTS)):
+        """for i in range(len(self.HOSTS)):
             ip = self.HOSTS[i]
             self.skt.connect((ip, self.PORT))
             self.skt.send(b"start_camera")
             data = self.skt.recv(1024)
             data = data.decode('utf-8')
-            print(data)
+            print(data)"""
+        print("Start cameras!")
 
     def manage_files(self):
         print("Managing files")
-        pass
 
     def stop_cameras(self):
-        for i in range(len(self.HOSTS)):
+        """for i in range(len(self.HOSTS)):
             ip = self.HOSTS[i]
             self.skt.connect((ip, self.PORT))
             self.skt.send(b"stop_camera")
             data = self.skt.recv(1024)
             data = data.decode('utf-8')
-            print(data)
+            print(data)"""
+        print("Stop cameras!")
 
     def close_application(self):
         choice = QtWidgets.QMessageBox.question(self, "Extract!", "Are you sure you want to quit",
