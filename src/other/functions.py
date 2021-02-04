@@ -26,7 +26,7 @@ def close_port(skt: socket):
 
 
 # fonction pour faire le ping multiprocess
-def sweep_network(job_queue):
+def sweep_network(job_queue, results_queue):
     cmd = 'ping -n 1 '
     while True:
         ip = job_queue.get()
@@ -45,5 +45,5 @@ def sweep_network(job_queue):
         # pour enlever le carctère ':' sur une réponse valide
         lastResponse = lastResponse.replace(':', '')
         if lastIp == lastResponse:
-            print(ip + " was found on network!")
+            results_queue.put(ip)
         job_queue.task_done()

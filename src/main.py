@@ -1,11 +1,13 @@
 import socket
 import sys
-import os
+import queue
+import threading
+import time
+
+import src.other.functions
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
-
-from src.other.functions import get_wifi_ip_address, close_port
 
 
 class Window(QtWidgets.QMainWindow):
@@ -22,11 +24,10 @@ class Window(QtWidgets.QMainWindow):
         self.activeCamera = 0
 
         # initialisation du port de communication
-        self.localIP = get_wifi_ip_address()
+        self.localIP = src.other.functions.get_wifi_ip_address()
 
         # initialisation des variables constantes
-        # TODO à changer pour faire un scan de toutes les caméras existantes au lancement
-        self.HOSTS = ['192.168.50.160', '192.168.50.161']
+        self.HOSTS = []
         self.PORT = 60000
 
         # création du socket de communication (BLOCKING for now)
@@ -61,16 +62,16 @@ class Window(QtWidgets.QMainWindow):
         self.main_menu = self.menuBar()
         self.palette = QtGui.QPalette()
 
+        results = self.detect_cameras()
+        for i in range(len(results)):
+            self.HOSTS.append((results[i], i))
+
     # création de l'interface
     def create_ui(self):
         self.btn_quit.clicked.connect(self.close_application)
         self.btn_quit.resize(200, 100)
         self.btn_quit.move(980, 680)
 
-        self.camera_combo_box.addItem("Camera 1")
-        self.camera_combo_box.addItem("Camera 2")
-        self.camera_combo_box.addItem("Camera 3")
-        self.camera_combo_box.setCurrentText("Camera 1")
         self.camera_combo_box.move(20, 50)
         self.camera_combo_box.activated.connect(self.choose_camera)
 
@@ -169,9 +170,12 @@ class Window(QtWidgets.QMainWindow):
         print("Start preview!")
 
     def choose_camera(self):
-        print(self.activeCamera)
-        self.activeCamera = self.camera_combo_box.currentIndex()
-        print(self.activeCamera)
+        newActiveCamera = self.camera_combo_box.currentIndex()
+        if newActiveCamera != self.activeCamera:
+            self.activeCamera = newActiveCamera
+            print("Camera " + str(self.activeCamera + 1) + " active")
+        else:
+            pass
 
     def start_camera(self):
         """ip = self.HOSTS[self.activeCamera]
@@ -184,6 +188,40 @@ class Window(QtWidgets.QMainWindow):
 
     def detect_cameras(self):
         print("Detect cameras!")
+        localIP = self.localIP.split('.')
+        network = localIP[0] + '.' + localIP[1] + '.' + localIP[2] + '.'
+        size = 20
+        num_of_threads = 20
+        jobs = queue.Queue()
+        results = queue.Queue()
+        text_results = []
+
+        for i in range(0, size + 1):
+            jobs.put(network + str(i))
+
+        for i in range(num_of_threads):
+            thread = threading.Thread(target=src.other.functions.sweep_network, args=(jobs, results), daemon=True)
+            thread.start()
+
+        t1 = time.time()
+        jobs.join()
+        t2 = time.time()
+        print(t2 - t1)
+
+        count = 0
+        while not results.empty():
+            result = results.get()
+            text_results.append((result, count))
+            count += 1
+
+        # on regarde si le nombre de caméra créé est le même
+        if len(text_results) != len(self.HOSTS):
+            self.HOSTS = text_results
+            self.camera_combo_box.clear()
+            for i in range(len(text_results)):
+                self.camera_combo_box.addItem("Camera " + str(i + 1))
+        return text_results
+
 
     def stop_camera(self):
         """ip = self.HOSTS[self.activeCamera]
@@ -221,7 +259,7 @@ class Window(QtWidgets.QMainWindow):
         choice = QtWidgets.QMessageBox.question(self, "Extract!", "Are you sure you want to quit",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
-            close_port(self.skt)
+            src.other.functions.close_port(self.skt)
             sys.exit()
         else:
             pass
