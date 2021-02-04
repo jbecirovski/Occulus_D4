@@ -1,8 +1,8 @@
 # script de définition des fonctions
 import socket
+import re
 import queue
 import os
-import subprocess
 
 
 # fonction pour trouver l'adresse ip locale
@@ -28,23 +28,22 @@ def close_port(skt: socket):
 # fonction pour faire le ping multiprocess
 def sweep_network(job_queue):
     cmd = 'ping -n 1 '
-    """# ouvrir le dispositif de caractère null pour écriture
-    DEVNULL = open(os.devnull, 'w')
     while True:
         ip = job_queue.get()
-        if ip is None:
-            break
-        try:
-            subprocess.check_call(['ping', '-n 1', ip], stdout=DEVNULL)
-            results_queue.put(ip)
-        except:
-            pass"""
-    while True:
-        ip = job_queue.get()
+        lastIp = ip.split('.')[3]
         comm = cmd + ip
         rep = os.popen(comm)
         # pour avoir seulement l'élément de réponse voulue
         response = rep.readlines()[2]
-        if response.find(ip) != -1:
+        # pour avoir la dernière partie de l'adresse ip retourner par la réponse
+        responseIP = response.split()[2]
+        # évite de faire un split sur un request time out (response.split()[2] différent, sans ip)
+        if responseIP != "out.":
+            lastResponse = responseIP.split('.')[3]
+        else:
+            lastResponse = responseIP
+        # pour enlever le carctère ':' sur une réponse valide
+        lastResponse = lastResponse.replace(':', '')
+        if lastIp == lastResponse:
             print(ip + " was found on network!")
         job_queue.task_done()

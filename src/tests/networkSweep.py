@@ -46,13 +46,15 @@ if __name__ == '__main__':
 
     # version avec threads du scan de network
     size = 20
+    num_of_threads = 20
     jobs = queue.Queue()
 
-    for i in range(size):
+    for i in range(0, size+1):
         jobs.put(network + str(i))
 
-    thread = threading.Thread(target=sweep_network, args=(jobs,), daemon=True)
-    thread.start()
+    for i in range(num_of_threads):
+        thread = threading.Thread(target=sweep_network, args=(jobs,), daemon=True)
+        thread.start()
 
     jobs.join()
 
