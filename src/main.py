@@ -62,9 +62,13 @@ class Window(QtWidgets.QMainWindow):
         self.main_menu = self.menuBar()
         self.palette = QtGui.QPalette()
 
+        # détecte les caméras qui sont sur le network au start
         results = self.detect_cameras()
         for i in range(len(results)):
             self.HOSTS.append((results[i], i))
+
+        # va chercher les infos de la caméra par défaut
+        self.get_infos()
 
     # création de l'interface
     def create_ui(self):
@@ -119,7 +123,6 @@ class Window(QtWidgets.QMainWindow):
         self.btn_down_arrow.clicked.connect(self.down_arrow)
         self.movedown_key.activated.connect(self.down_arrow)
 
-        self.info.setText(" Informations\n Nom de la camera:\n Batterie restante:")
         self.info.setStyleSheet("border: 2px solid grey;")
         self.info.resize(200, 100)
         self.info.move(950, 50)
@@ -174,6 +177,7 @@ class Window(QtWidgets.QMainWindow):
         if newActiveCamera != self.activeCamera:
             self.activeCamera = newActiveCamera
             print("Camera " + str(self.activeCamera + 1) + " active")
+            self.get_infos()
         else:
             pass
 
@@ -303,6 +307,22 @@ class Window(QtWidgets.QMainWindow):
         data = data.decode('utf-8')
         print(data)"""
         print("down")
+
+    def get_infos(self):
+        """ip = self.HOSTS[self.activeCamera]
+        self.skt.connect((ip, self.PORT))
+        self.skt.send(b"get_infos")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)"""
+        data = "100%"
+        print("get infos from camera: " + str(self.activeCamera + 1) + "!")
+        # update le label d'infos
+        camera = self.HOSTS[self.activeCamera]
+        self.info.setText(" Informations\n Nom de la camera: " + str(camera[1] + 1) +
+                          "\n Adresse IP: " + str(camera[0]) +
+                          "\n Batterie restante: " + str(data))
+
 
     def style_pop_up(self):
         msg = QMessageBox()
