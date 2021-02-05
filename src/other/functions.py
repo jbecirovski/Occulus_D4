@@ -1,7 +1,5 @@
 # script de définition des fonctions
 import socket
-import re
-import queue
 import os
 
 
@@ -42,8 +40,12 @@ def sweep_network(job_queue, results_queue):
             lastResponse = responseIP.split('.')[3]
         else:
             lastResponse = responseIP
-        # pour enlever le carctère ':' sur une réponse valide
+        # pour enlever le caractère ':' sur une réponse valide
         lastResponse = lastResponse.replace(':', '')
         if lastIp == lastResponse:
             results_queue.put(ip)
         job_queue.task_done()
+
+
+def get_preview():
+    print("Getting preview")

@@ -30,6 +30,9 @@ class Window(QtWidgets.QMainWindow):
         self.HOSTS = []
         self.PORT = 60000
 
+        # initialisation de la variable pour l'envoi de preview
+        self.active_preview = False
+
         # création du socket de communication (BLOCKING for now)
         # TODO voir si on doit le garder en blocking si plusieurs cameras ou envoi des images
         self.skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -136,7 +139,7 @@ class Window(QtWidgets.QMainWindow):
         self.preview_button.setText("Start preview")
         self.preview_button.move(490, 720)
         self.preview_button.resize(120, 60)
-        self.preview_button.clicked.connect(self.start_preview)
+        self.preview_button.clicked.connect(self.start_stop_preview)
 
         QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
 
@@ -169,8 +172,15 @@ class Window(QtWidgets.QMainWindow):
         QtWidgets.qApp.setPalette(self.palette)
 
     # méthodes de classe
-    def start_preview(self):
-        print("Start preview!")
+    def start_stop_preview(self):
+        if self.active_preview:
+            self.active_preview = False
+            self.preview_button.setText("Start preview")
+            print("Stop preview")
+        else:
+            self.active_preview = True
+            self.preview_button.setText("Stop preview")
+            print("Start preview")
 
     def choose_camera(self):
         newActiveCamera = self.camera_combo_box.currentIndex()
@@ -218,6 +228,9 @@ class Window(QtWidgets.QMainWindow):
             text_results.append((result, count))
             count += 1
 
+        # classer en ordre croissant
+        text_results.sort()
+
         # on regarde si le nombre de caméra créé est le même
         if len(text_results) != len(self.HOSTS):
             self.HOSTS = text_results
@@ -226,7 +239,6 @@ class Window(QtWidgets.QMainWindow):
                 self.camera_combo_box.addItem("Camera " + str(i + 1))
         return text_results
 
-
     def stop_camera(self):
         """ip = self.HOSTS[self.activeCamera]
         self.skt.connect((ip, self.PORT))
@@ -234,7 +246,7 @@ class Window(QtWidgets.QMainWindow):
         data = self.skt.recv(1024)
         data = data.decode('utf-8')
         print(data)"""
-        print("Stop camera: " + str(self.activeCamera + 1))
+        print("Stopping camera: " + str(self.activeCamera + 1))
 
     def start_cameras(self):
         """for i in range(len(self.HOSTS)):
@@ -246,9 +258,6 @@ class Window(QtWidgets.QMainWindow):
             print(data)"""
         print("Start cameras!")
 
-    def manage_files(self):
-        print("Managing files")
-
     def stop_cameras(self):
         """for i in range(len(self.HOSTS)):
             ip = self.HOSTS[i]
@@ -258,6 +267,9 @@ class Window(QtWidgets.QMainWindow):
             data = data.decode('utf-8')
             print(data)"""
         print("Stop cameras!")
+
+    def manage_files(self):
+        print("Managing files")
 
     def close_application(self):
         choice = QtWidgets.QMessageBox.question(self, "Extract!", "Are you sure you want to quit",
@@ -322,7 +334,6 @@ class Window(QtWidgets.QMainWindow):
         self.info.setText(" Informations\n Nom de la camera: " + str(camera[1] + 1) +
                           "\n Adresse IP: " + str(camera[0]) +
                           "\n Batterie restante: " + str(data))
-
 
     def style_pop_up(self):
         msg = QMessageBox()
