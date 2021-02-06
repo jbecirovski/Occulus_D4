@@ -1,8 +1,10 @@
+import locale
 import socket
 import sys
 import queue
 import threading
 import time
+import ctypes
 
 import src.other.functions
 
@@ -22,6 +24,14 @@ class Window(QtWidgets.QMainWindow):
 
         # paramètre de la classe
         self.activeCamera = 0
+
+        # détermine la langue de l'OS (change quelque chose pour les commandes bash)
+        windll = ctypes.windll.kernel32
+        lang = locale.windows_locale[ windll.GetUserDefaultUILanguage()].split('_')[0]
+        if lang == 'fr':
+            self.osLanguage = 'fr'
+        else:
+            self.osLanguage = 'en'
 
         # initialisation du port de communication
         self.localIP = src.other.functions.get_wifi_ip_address()
@@ -200,6 +210,7 @@ class Window(QtWidgets.QMainWindow):
         print(data)"""
         print("Starting camera: " + str(self.activeCamera + 1))
 
+    # TODO À changer avec range d'adresse des caméras
     def detect_cameras(self):
         print("Detect cameras!")
         localIP = self.localIP.split('.')
@@ -213,9 +224,14 @@ class Window(QtWidgets.QMainWindow):
         for i in range(0, size + 1):
             jobs.put(network + str(i))
 
-        for i in range(num_of_threads):
-            thread = threading.Thread(target=src.other.functions.sweep_network, args=(jobs, results), daemon=True)
-            thread.start()
+        if self.osLanguage == 'fr':
+            for i in range(num_of_threads):
+                thread = threading.Thread(target=src.other.functions.sweep_network_fr, args=(jobs, results), daemon=True)
+                thread.start()
+        else:
+            for i in range(num_of_threads):
+                thread = threading.Thread(target=src.other.functions.sweep_network, args=(jobs, results), daemon=True)
+                thread.start()
 
         t1 = time.time()
         jobs.join()

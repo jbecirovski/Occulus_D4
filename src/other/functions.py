@@ -23,7 +23,7 @@ def close_port(skt: socket):
     skt.close()
 
 
-# fonction pour faire le ping multiprocess
+# fonction pour faire le ping multiprocess (en)
 def sweep_network(job_queue, results_queue):
     cmd = 'ping -n 1 '
     while True:
@@ -37,6 +37,31 @@ def sweep_network(job_queue, results_queue):
         responseIP = response.split()[2]
         # évite de faire un split sur un request time out (response.split()[2] différent, sans ip)
         if responseIP != "out.":
+            lastResponse = responseIP.split('.')[3]
+        else:
+            lastResponse = responseIP
+        # pour enlever le caractère ':' sur une réponse valide
+        lastResponse = lastResponse.replace(':', '')
+        if lastIp == lastResponse:
+            results_queue.put(ip)
+        job_queue.task_done()
+
+
+def sweep_network_fr(job_queue, results_queue):
+    cmd = 'ping -n 1 '
+    while True:
+        ip = job_queue.get()
+        lastIp = ip.split('.')[3]
+        comm = cmd + ip
+        rep = os.popen(comm)
+        # pour avoir seulement l'élément de réponse voulue
+        response = rep.readlines()[2]
+        # pour avoir la dernière partie de l'adresse ip retourner par la réponse
+        responseIP = response.split()[2]
+        # pour enlever les éléments pas important du split
+        responseIP = responseIP[:-2]
+        # évite de faire un split sur un request time out (response.split()[2] différent, sans ip)
+        if responseIP != "":
             lastResponse = responseIP.split('.')[3]
         else:
             lastResponse = responseIP
