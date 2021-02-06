@@ -27,7 +27,7 @@ class Window(QtWidgets.QMainWindow):
 
         # détermine la langue de l'OS (change quelque chose pour les commandes bash)
         windll = ctypes.windll.kernel32
-        lang = locale.windows_locale[ windll.GetUserDefaultUILanguage()].split('_')[0]
+        lang = locale.windows_locale[windll.GetUserDefaultUILanguage()].split('_')[0]
         if lang == 'fr':
             self.osLanguage = 'fr'
         else:
@@ -75,10 +75,16 @@ class Window(QtWidgets.QMainWindow):
         self.main_menu = self.menuBar()
         self.palette = QtGui.QPalette()
 
+        # déclaration des threads pour faire du pooling
+        self.infoThread = threading.Thread()
+
         # détecte les caméras qui sont sur le network au start
-        results = self.detect_cameras()
-        for i in range(len(results)):
-            self.HOSTS.append((results[i], i))
+        while len(self.HOSTS) == 0:
+            results = self.detect_cameras()
+            for i in range(len(results)):
+                self.HOSTS.append((results[i], i))
+            if len(self.HOSTS) == 0:
+                print("No camera was detected. Trying again!")
 
         # va chercher les infos de la caméra par défaut
         self.get_infos()
@@ -181,6 +187,11 @@ class Window(QtWidgets.QMainWindow):
         self.palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.darkRed)
         QtWidgets.qApp.setPalette(self.palette)
 
+        # créer le thread pour aller chercher les infos de la camera active
+        self.infoThread = threading.Thread(target=src.other.functions.get_infos_thread,
+                        args=(self.skt, self.HOSTS[self.activeCamera], self.PORT, self.info,),
+                        daemon=True).start()
+
     # méthodes de classe
     def start_stop_preview(self):
         if self.active_preview:
@@ -198,6 +209,11 @@ class Window(QtWidgets.QMainWindow):
             self.activeCamera = newActiveCamera
             print("Camera " + str(self.activeCamera + 1) + " active")
             self.get_infos()
+            # restarter le thread pour pooler l'info de la caméra et restarter avec la nouvelle caméra
+            self.infoThread.join()
+            self.infoThread = threading.Thread(target=src.other.functions.get_infos_thread,
+                                               args=(self.skt, self.HOSTS[newActiveCamera], self.PORT, self.info,),
+                                               daemon=True).start()
         else:
             pass
 
@@ -226,7 +242,8 @@ class Window(QtWidgets.QMainWindow):
 
         if self.osLanguage == 'fr':
             for i in range(num_of_threads):
-                thread = threading.Thread(target=src.other.functions.sweep_network_fr, args=(jobs, results), daemon=True)
+                thread = threading.Thread(target=src.other.functions.sweep_network_fr,
+                                          args=(jobs, results), daemon=True)
                 thread.start()
         else:
             for i in range(num_of_threads):
@@ -346,9 +363,9 @@ class Window(QtWidgets.QMainWindow):
         data = "100%"
         print("get infos from camera: " + str(self.activeCamera + 1) + "!")
         # update le label d'infos
-        camera = self.HOSTS[self.activeCamera]
-        self.info.setText(" Informations\n Nom de la camera: " + str(camera[1] + 1) +
-                          "\n Adresse IP: " + str(camera[0]) +
+        cam = self.HOSTS[self.activeCamera]
+        self.info.setText(" Informations\n Nom de la camera: " + str(cam[1] + 1) +
+                          "\n Adresse IP: " + str(cam[0]) +
                           "\n Batterie restante: " + str(data))
 
     def style_pop_up(self):

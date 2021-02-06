@@ -4,6 +4,9 @@ import os
 
 
 # fonction pour trouver l'adresse ip locale
+import time
+
+
 def get_wifi_ip_address():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
@@ -70,6 +73,21 @@ def sweep_network_fr(job_queue, results_queue):
         if lastIp == lastResponse:
             results_queue.put(ip)
         job_queue.task_done()
+
+
+def get_infos_thread(skt, ip, port, info):
+    while True:
+        time.sleep(60)
+        print("Getting infos")
+        """skt.connect((ip[0], port))
+        skt.send(b"get_infos")
+        data = skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)"""
+        data = "50%"
+        print(data)
+        info.setText(" Informations\n Nom de la camera: " + str(ip[1] + 1) + "\n Adresse IP: " + str(ip[0]) +
+                    "\n Batterie restante: " + str(data))
 
 
 def get_preview():
