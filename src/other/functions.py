@@ -1,10 +1,9 @@
 # script de définition des fonctions
 import socket
 import os
-
-
-# fonction pour trouver l'adresse ip locale
 import time
+
+from PyQt5 import QtGui
 
 
 def get_wifi_ip_address():
@@ -77,7 +76,8 @@ def sweep_network_fr(job_queue, results_queue):
 
 def get_infos_thread(skt, ip, port, info):
     while True:
-        time.sleep(60)
+        # pour être complémentaire à la fonction du UI (ne pas le faire 2 fois de suite en startant/changeant de camera)
+        time.sleep(5)
         print("Getting infos")
         """skt.connect((ip[0], port))
         skt.send(b"get_infos")
@@ -90,5 +90,15 @@ def get_infos_thread(skt, ip, port, info):
                     "\n Batterie restante: " + str(data))
 
 
-def get_preview():
-    print("Getting preview")
+def get_preview(skt, ip, port, preview):
+    while True:
+        print("Getting preview")
+        """skt.connect((ip[0], port))
+        skt.send(b"get_infos")
+        data = skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)"""
+        data = "50 images"
+        print(data)
+        preview.setPixmap(QtGui.QPixmap(data))
+        time.sleep(1)

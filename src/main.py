@@ -23,7 +23,7 @@ class Window(QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
 
         # paramètre de la classe
-        self.activeCamera = 0
+        self.active_camera = 0
 
         # détermine la langue de l'OS (change quelque chose pour les commandes bash)
         windll = ctypes.windll.kernel32
@@ -77,12 +77,11 @@ class Window(QtWidgets.QMainWindow):
 
         # déclaration des threads pour faire du pooling
         self.infoThread = threading.Thread()
+        self.previewThread = threading.Thread()
 
         # détecte les caméras qui sont sur le network au start
         while len(self.HOSTS) == 0:
-            results = self.detect_cameras()
-            for i in range(len(results)):
-                self.HOSTS.append((results[i], i))
+            self.detect_cameras()
             if len(self.HOSTS) == 0:
                 print("No camera was detected. Trying again!")
 
@@ -189,7 +188,7 @@ class Window(QtWidgets.QMainWindow):
 
         # créer le thread pour aller chercher les infos de la camera active
         self.infoThread = threading.Thread(target=src.other.functions.get_infos_thread,
-                        args=(self.skt, self.HOSTS[self.activeCamera], self.PORT, self.info,),
+                        args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info),
                         daemon=True).start()
 
     # méthodes de classe
@@ -198,33 +197,39 @@ class Window(QtWidgets.QMainWindow):
             self.active_preview = False
             self.preview_button.setText("Start preview")
             print("Stop preview")
+            # stop le thread pour aller pooler les images de preview
+            self.previewThread.join()
         else:
             self.active_preview = True
             self.preview_button.setText("Stop preview")
             print("Start preview")
+            # start le thread pour aller pooler les images de preview
+            self.previewThread = threading.Thread(target=src.other.functions.get_preview,
+                                args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.preview,),
+                                daemon=True).start()
 
     def choose_camera(self):
-        newActiveCamera = self.camera_combo_box.currentIndex()
-        if newActiveCamera != self.activeCamera:
-            self.activeCamera = newActiveCamera
-            print("Camera " + str(self.activeCamera + 1) + " active")
+        new_active_camera = self.camera_combo_box.currentIndex()
+        if new_active_camera != self.active_camera:
+            self.active_camera = new_active_camera
+            print("Camera " + str(self.active_camera + 1) + " active")
             self.get_infos()
             # restarter le thread pour pooler l'info de la caméra et restarter avec la nouvelle caméra
             self.infoThread.join()
             self.infoThread = threading.Thread(target=src.other.functions.get_infos_thread,
-                                               args=(self.skt, self.HOSTS[newActiveCamera], self.PORT, self.info,),
+                                               args=(self.skt, self.HOSTS[new_active_camera], self.PORT, self.info,),
                                                daemon=True).start()
         else:
             pass
 
     def start_camera(self):
-        """ip = self.HOSTS[self.activeCamera]
+        """ip = self.HOSTS[self.active_camera][0]
         self.skt.connect((ip, self.PORT))
         self.skt.send(b"start_camera")
         data = self.skt.recv(1024)
         data = data.decode('utf-8')
         print(data)"""
-        print("Starting camera: " + str(self.activeCamera + 1))
+        print("Starting camera: " + str(self.active_camera + 1))
 
     # TODO À changer avec range d'adresse des caméras
     def detect_cameras(self):
@@ -273,17 +278,17 @@ class Window(QtWidgets.QMainWindow):
         return text_results
 
     def stop_camera(self):
-        """ip = self.HOSTS[self.activeCamera]
+        """ip = self.HOSTS[self.active_camera][0]
         self.skt.connect((ip, self.PORT))
         self.skt.send(b"stop_camera")
         data = self.skt.recv(1024)
         data = data.decode('utf-8')
         print(data)"""
-        print("Stopping camera: " + str(self.activeCamera + 1))
+        print("Stopping camera: " + str(self.active_camera + 1))
 
     def start_cameras(self):
         """for i in range(len(self.HOSTS)):
-            ip = self.HOSTS[i]
+            ip = self.HOSTS[i][0]
             self.skt.connect((ip, self.PORT))
             self.skt.send(b"start_camera")
             data = self.skt.recv(1024)
@@ -293,7 +298,7 @@ class Window(QtWidgets.QMainWindow):
 
     def stop_cameras(self):
         """for i in range(len(self.HOSTS)):
-            ip = self.HOSTS[i]
+            ip = self.HOSTS[i][0]
             self.skt.connect((ip, self.PORT))
             self.skt.send(b"stop_camera")
             data = self.skt.recv(1024)
@@ -318,7 +323,7 @@ class Window(QtWidgets.QMainWindow):
         self.close_application()
 
     def up_arrow(self):
-        """ip = self.HOSTS[self.activeCamera]
+        """ip = self.HOSTS[self.active_camera][0]
         self.skt.connect((ip, self.PORT))
         self.skt.send(b"move_up")
         data = self.skt.recv(1024)
@@ -327,7 +332,7 @@ class Window(QtWidgets.QMainWindow):
         print("up")
 
     def right_arrow(self):
-        """ip = self.HOSTS[self.activeCamera]
+        """ip = self.HOSTS[self.active_camera][0]
         self.skt.connect((ip, self.PORT))
         self.skt.send(b"move_right")
         data = self.skt.recv(1024)
@@ -336,7 +341,7 @@ class Window(QtWidgets.QMainWindow):
         print("right")
 
     def left_arrow(self):
-        """ip = self.HOSTS[self.activeCamera]
+        """ip = self.HOSTS[self.active_camera][0]
         self.skt.connect((ip, self.PORT))
         self.skt.send(b"move_left")
         data = self.skt.recv(1024)
@@ -345,7 +350,7 @@ class Window(QtWidgets.QMainWindow):
         print("left")
 
     def down_arrow(self):
-        """ip = self.HOSTS[self.activeCamera]
+        """ip = self.HOSTS[self.active_camera][0]
         self.skt.connect((ip, self.PORT))
         self.skt.send(b"move_down")
         data = self.skt.recv(1024)
@@ -354,16 +359,16 @@ class Window(QtWidgets.QMainWindow):
         print("down")
 
     def get_infos(self):
-        """ip = self.HOSTS[self.activeCamera]
+        """ip = self.HOSTS[self.active_camera][0]
         self.skt.connect((ip, self.PORT))
         self.skt.send(b"get_infos")
         data = self.skt.recv(1024)
         data = data.decode('utf-8')
         print(data)"""
         data = "100%"
-        print("get infos from camera: " + str(self.activeCamera + 1) + "!")
+        print("getting infos from camera: " + str(self.active_camera + 1) + "!")
         # update le label d'infos
-        cam = self.HOSTS[self.activeCamera]
+        cam = self.HOSTS[self.active_camera]
         self.info.setText(" Informations\n Nom de la camera: " + str(cam[1] + 1) +
                           "\n Adresse IP: " + str(cam[0]) +
                           "\n Batterie restante: " + str(data))
