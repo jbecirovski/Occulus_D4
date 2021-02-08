@@ -12,6 +12,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
 
+# TODO faire un process pour aller chercher l'info, le mettre dans une queue et le faire traiter par un thread
 class Window(QtWidgets.QMainWindow):
 
     # contructeur de la classe
@@ -24,6 +25,9 @@ class Window(QtWidgets.QMainWindow):
 
         # paramètre de la classe
         self.active_camera = 0
+
+        # créer la deuxième fenêtre pour la faire apparaître lorsque nécessaire
+        self.fileWindow = ""
 
         # détermine la langue de l'OS (change quelque chose pour les commandes bash)
         windll = ctypes.windll.kernel32
@@ -188,8 +192,8 @@ class Window(QtWidgets.QMainWindow):
 
         # créer le thread pour aller chercher les infos de la camera active
         self.infoThread = threading.Thread(target=src.other.functions.get_infos_thread,
-                        args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info),
-                        daemon=True).start()
+                                           args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info),
+                                           daemon=True).start()
 
     # méthodes de classe
     def start_stop_preview(self):
@@ -205,8 +209,9 @@ class Window(QtWidgets.QMainWindow):
             print("Start preview")
             # start le thread pour aller pooler les images de preview
             self.previewThread = threading.Thread(target=src.other.functions.get_preview,
-                                args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.preview,),
-                                daemon=True).start()
+                                                  args=(
+                                                  self.skt, self.HOSTS[self.active_camera], self.PORT, self.preview,),
+                                                  daemon=True).start()
 
     def choose_camera(self):
         new_active_camera = self.camera_combo_box.currentIndex()
@@ -308,6 +313,11 @@ class Window(QtWidgets.QMainWindow):
 
     def manage_files(self):
         print("Managing files")
+        self.fileWindow = FileWindow(self.active_camera, self.skt, self.HOSTS[self.active_camera], self.PORT)
+        if self.fileWindow.isVisible():
+            self.fileWindow.hide()
+        else:
+            self.fileWindow.show()
 
     def close_application(self):
         choice = QtWidgets.QMessageBox.question(self, "Extract!", "Are you sure you want to quit",
@@ -380,6 +390,120 @@ class Window(QtWidgets.QMainWindow):
         msg.setText("Choose the window style")
         msg.setStandardButtons(QMessageBox.Apply | QMessageBox.Cancel)
         x = msg.exec()
+
+
+# classe pour la fenêtre de menu pour manager les fichiers
+class FileWindow(QtWidgets.QWidget):
+
+    # constructeur de la classe
+    def __init__(self, camera, skt, host, port):
+        super(FileWindow, self).__init__()
+        self.camera = camera
+        self.skt = skt
+        self.host = host
+        self.port = port
+        self.setFixedHeight(600)
+        self.setFixedWidth(1000)
+        self.setWindowTitle("Manage Files")
+        self.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
+
+        # déclaration de la variable pour garder la valeur du fichier sélectionné
+        self.selected_file = 0
+
+        # déclaration des différents composants de l'interface graphique
+        self.quit_button = QtWidgets.QPushButton("Quit", self)
+        self.refresh_button = QtWidgets.QPushButton("Refresh", self)
+        self.download_button = QtWidgets.QPushButton("Download", self)
+        self.delete_button = QtWidgets.QPushButton("Delete", self)
+        self.path = QtWidgets.QLabel(self)
+        self.file_label = QtWidgets.QLabel(self)
+        self.selected_file_label = QtWidgets.QLabel(self)
+        self.files = QtWidgets.QFrame(self)
+
+        self.files = self.check_files()
+        for i in range(len(self.files)):
+            self.i = QtWidgets.QPushButton(str(self.files[i]), self)
+            self.i.setObjectName("file_button_" + str(i))
+            self.i.move(30, 20 * (i + 2))
+            self.i.resize(960, 20)
+            self.i.released.connect(self.select_file)
+
+        self.create_ui()
+
+    # création de l'interface
+    def create_ui(self):
+        self.selected_file_label.move(500, 20)
+        self.selected_file_label.resize(500, 20)
+        self.selected_file_label.setText("Selected file: ")
+
+        self.file_label.move(10, 20)
+        self.file_label.resize(40, 20)
+        self.file_label.setText("Files: ")
+
+        self.quit_button.resize(120, 60)
+        self.quit_button.move(740, 530)
+        self.quit_button.clicked.connect(self.quit)
+
+        self.refresh_button.resize(120, 60)
+        self.refresh_button.move(140, 530)
+        self.refresh_button.clicked.connect(self.refresh)
+
+        self.download_button.resize(120, 60)
+        self.download_button.move(340, 530)
+        self.download_button.clicked.connect(self.download)
+
+        self.delete_button.resize(120, 60)
+        self.delete_button.move(540, 530)
+        self.delete_button.clicked.connect(self.delete)
+
+        self.path.resize(600, 20)
+        self.path.move(10, 0)
+        self.path.setText("Directory in camera " + str(self.camera + 1) + ": ")
+
+    def check_files(self):
+        """ip = self.host[0]
+        self.skt.connect((ip, self.port))
+        self.skt.send(b"check_files")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)"""
+        data = "Fichier1-Fichier2-Fichier3-Fichier4-Fichier5-Fichier6-Fichier7-Fichier8-Fichier9-Fichier10"
+        data = data.split('-')
+        return data
+
+    def select_file(self):
+        clicked_button = self.sender()
+        name = clicked_button.objectName()
+        self.selected_file = name.split('_')[2]
+        self.selected_file_label.setText("Selected file: " + self.files[int(self.selected_file)])
+
+    def quit(self):
+        self.close()
+
+    def refresh(self):
+        for i in range(len(self.files)):
+            self.i.clear()
+        """ip = self.host[0]
+        self.skt.connect((ip, self.port))
+        self.skt.send(b"refresh_files")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)
+        self.fill_files(data)"""
+        print("Refreshing file menu window!")
+        # TODO recéer la liste de fihcier, reseter le fichier actif et les boutons avec
+
+    def download(self):
+        """ip = self.host[0]
+        self.skt.connect((ip, self.port))
+        self.skt.send(b"download_file")"""
+        print("Downloading selected file to computer!")
+
+    def delete(self):
+        """ip = self.host[0]
+        self.skt.connect((ip, self.port))
+        self.skt.send(b"delete_file")"""
+        print("Deleting selected file from camera!")
 
 
 if __name__ == "__main__":
