@@ -408,7 +408,10 @@ class FileWindow(QtWidgets.QWidget):
         self.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
 
         # déclaration de la variable pour garder la valeur du fichier sélectionné
-        self.selected_file = 0
+        self.selected_file = None
+
+        # déclaration de la variable pour garder les boutons
+        self.button_list = []
 
         # déclaration des différents composants de l'interface graphique
         self.quit_button = QtWidgets.QPushButton("Quit", self)
@@ -418,22 +421,22 @@ class FileWindow(QtWidgets.QWidget):
         self.path = QtWidgets.QLabel(self)
         self.file_label = QtWidgets.QLabel(self)
         self.selected_file_label = QtWidgets.QLabel(self)
-        self.files = QtWidgets.QFrame(self)
 
-        self.files = self.check_files()
-        for i in range(len(self.files)):
-            self.i = QtWidgets.QPushButton(str(self.files[i]), self)
-            self.i.setObjectName("file_button_" + str(i))
-            self.i.move(30, 20 * (i + 2))
-            self.i.resize(960, 20)
-            self.i.released.connect(self.select_file)
+        # on va regarder les fichiers de la caméra
+        files = self.check_files()
+        for i in range(len(files)):
+            self.button_list.append(QtWidgets.QPushButton(files[i], self))
+            self.button_list[i].setObjectName(files[i])
+            self.button_list[i].move(30, 20 * (i + 2))
+            self.button_list[i].resize(960, 20)
+            self.button_list[i].released.connect(self.select_file)
 
         self.create_ui()
 
     # création de l'interface
     def create_ui(self):
-        self.selected_file_label.move(500, 20)
-        self.selected_file_label.resize(500, 20)
+        self.selected_file_label.move(300, 20)
+        self.selected_file_label.resize(700, 20)
         self.selected_file_label.setText("Selected file: ")
 
         self.file_label.move(10, 20)
@@ -474,15 +477,16 @@ class FileWindow(QtWidgets.QWidget):
     def select_file(self):
         clicked_button = self.sender()
         name = clicked_button.objectName()
-        self.selected_file = name.split('_')[2]
-        self.selected_file_label.setText("Selected file: " + self.files[int(self.selected_file)])
+        self.selected_file = name
+        self.selected_file_label.setText("Selected file: " + self.selected_file)
 
     def quit(self):
         self.close()
 
     def refresh(self):
-        for i in range(len(self.files)):
-            self.i.clear()
+        for i in range(len(self.button_list)):
+            self.button_list[i].deleteLater()
+        self.button_list = []
         """ip = self.host[0]
         self.skt.connect((ip, self.port))
         self.skt.send(b"refresh_files")
@@ -491,19 +495,45 @@ class FileWindow(QtWidgets.QWidget):
         print(data)
         self.fill_files(data)"""
         print("Refreshing file menu window!")
-        # TODO recéer la liste de fihcier, reseter le fichier actif et les boutons avec
+        data = "Fichier1-Fichier2-Fichier3-Fichier4-Fichier5"
+        data = data.split("-")
+        for i in range(len(data)):
+            self.button_list.append(QtWidgets.QPushButton(data[i], self))
+            self.button_list[i].setObjectName(data[i])
+            self.button_list[i].move(30, 20 * (i + 2))
+            self.button_list[i].resize(960, 20)
+            self.button_list[i].released.connect(self.select_file)
+            self.button_list[i].show()
+        self.selected_file = None
+        self.selected_file_label.setText("Selected file: ")
 
     def download(self):
-        """ip = self.host[0]
-        self.skt.connect((ip, self.port))
-        self.skt.send(b"download_file")"""
-        print("Downloading selected file to computer!")
+        if self.selected_file is None:
+            msg = QtWidgets.QMessageBox()
+            msg.setText("Please select a file before downloading.")
+            msg.setWindowTitle("Download error")
+            msg.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+        else:
+            """ip = self.host[0]
+            self.skt.connect((ip, self.port))
+            self.skt.send(b"download_file_" + self.selected_file)"""
+            print("Downloading selected file to computer!")
 
     def delete(self):
-        """ip = self.host[0]
-        self.skt.connect((ip, self.port))
-        self.skt.send(b"delete_file")"""
-        print("Deleting selected file from camera!")
+        if self.selected_file is None:
+            msg = QtWidgets.QMessageBox()
+            msg.setText("Please select a file before downloading.")
+            msg.setWindowTitle("Delete error")
+            msg.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+        else:
+            """ip = self.host[0]
+            self.skt.connect((ip, self.port))
+            self.skt.send(b"delete_file_ + self.selected_file")"""
+            print("Deleting selected file from camera!")
 
 
 if __name__ == "__main__":
