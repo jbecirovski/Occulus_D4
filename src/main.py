@@ -1,10 +1,11 @@
 import locale
 import socket
 import sys
-import queue
 import threading
 import time
 import ctypes
+import queue
+from multiprocessing import Process, Queue
 
 import src.other.functions
 
@@ -79,9 +80,17 @@ class Window(QtWidgets.QMainWindow):
         self.main_menu = self.menuBar()
         self.palette = QtGui.QPalette()
 
+        # déclaration des process pour aller chercher l'information des caméras
+        self.info_process = Process()
+        self.preview_process = Process()
+
         # déclaration des threads pour faire du pooling
-        self.infoThread = threading.Thread()
-        self.previewThread = threading.Thread()
+        self.info_thread = threading.Thread()
+        self.preview_thread = threading.Thread()
+
+        # déclaration des queues pour la gestion des communications entre les process et threads
+        self.info_queue = Queue()
+        self.preview_queue = Queue()
 
         # détecte les caméras qui sont sur le network au start
         while len(self.HOSTS) == 0:
@@ -190,10 +199,20 @@ class Window(QtWidgets.QMainWindow):
         self.palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.darkRed)
         QtWidgets.qApp.setPalette(self.palette)
 
-        # créer le thread pour aller chercher les infos de la camera active
-        self.infoThread = threading.Thread(target=src.other.functions.get_infos_thread,
-                                           args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info),
+        # créer le process pour aller chercher les infos de la caméra
+        self.info_process = Process(target=src.other.functions.get_info_process,
+                                    args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info_queue,))
+        self.info_process.start()
+
+        # créer le thread pour aller updater l'info de la caméra
+        self.info_thread = threading.Thread(target=src.other.functions.update_infos_thread,
+                                           args=(self.info_queue, self.info,),
                                            daemon=True).start()
+
+        # créer le thread pour aller updater le preview
+        self.preview_thread = threading.Thread(target=src.other.functions.update_preview_thread,
+                                              args=(self.preview_queue, self.preview,),
+                                              daemon=True).start()
 
     # méthodes de classe
     def start_stop_preview(self):
@@ -201,17 +220,18 @@ class Window(QtWidgets.QMainWindow):
             self.active_preview = False
             self.preview_button.setText("Start preview")
             print("Stop preview")
-            # stop le thread pour aller pooler les images de preview
-            self.previewThread.join()
+            # stop le process pour aller chercher les images de preview
+            self.preview_process.terminate()
+            self.preview.setPixmap(QtGui.QPixmap(r"ressource/protolabLogo.png"))
         else:
             self.active_preview = True
             self.preview_button.setText("Stop preview")
             print("Start preview")
-            # start le thread pour aller pooler les images de preview
-            self.previewThread = threading.Thread(target=src.other.functions.get_preview,
-                                                  args=(
-                                                  self.skt, self.HOSTS[self.active_camera], self.PORT, self.preview,),
-                                                  daemon=True).start()
+            # start le process pour aller chercher les images de preview
+            self.preview_process = Process(target=src.other.functions.get_preview_process,
+                                           args=(self.skt, self.HOSTS[self.active_camera][0], self.PORT,
+                                                 self.preview_queue,))
+            self.preview_process.start()
 
     def choose_camera(self):
         new_active_camera = self.camera_combo_box.currentIndex()
@@ -219,11 +239,11 @@ class Window(QtWidgets.QMainWindow):
             self.active_camera = new_active_camera
             print("Camera " + str(self.active_camera + 1) + " active")
             self.get_infos()
-            # restarter le thread pour pooler l'info de la caméra et restarter avec la nouvelle caméra
-            self.infoThread.join()
-            self.infoThread = threading.Thread(target=src.other.functions.get_infos_thread,
-                                               args=(self.skt, self.HOSTS[new_active_camera], self.PORT, self.info,),
-                                               daemon=True).start()
+            # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
+            self.info_process.terminate()
+            self.info_process = Process(target=src.other.functions.get_info_process,
+                                        args=(self.skt, self.HOSTS[new_active_camera], self.PORT, self.info_queue,))
+            self.info_process.start()
         else:
             pass
 
@@ -265,17 +285,21 @@ class Window(QtWidgets.QMainWindow):
         t2 = time.time()
         print(t2 - t1)
 
-        count = 0
         while not results.empty():
             result = results.get()
-            text_results.append((result, count))
-            count += 1
+            text_results.append(result)
 
-        # classer en ordre croissant
+        # classer les ips en ordre croissant
         text_results.sort()
 
-        # on regarde si le nombre de caméra créé est le même
-        if len(text_results) != len(self.HOSTS):
+        # ajouter un numéro de caméra à chaque ip en ordre croissant
+        count = 0
+        for i in range(len(text_results)):
+            text_results[i] = (text_results[i], count)
+            count += 1
+
+        # on regarde si les nouvelles caméras détectées sont les mêmes que celles d'avant
+        if text_results != self.HOSTS:
             self.HOSTS = text_results
             self.camera_combo_box.clear()
             for i in range(len(text_results)):
@@ -324,6 +348,8 @@ class Window(QtWidgets.QMainWindow):
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
             src.other.functions.close_port(self.skt)
+            self.info_process.terminate()
+            self.preview_process.terminate()
             sys.exit()
         else:
             pass
@@ -379,7 +405,7 @@ class Window(QtWidgets.QMainWindow):
         print("getting infos from camera: " + str(self.active_camera + 1) + "!")
         # update le label d'infos
         cam = self.HOSTS[self.active_camera]
-        self.info.setText(" Informations\n Nom de la camera: " + str(cam[1] + 1) +
+        self.info.setText(" Informations\n Nom de la camera: Camera " + str(cam[1] + 1) +
                           "\n Adresse IP: " + str(cam[0]) +
                           "\n Batterie restante: " + str(data))
 

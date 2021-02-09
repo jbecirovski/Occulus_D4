@@ -2,6 +2,7 @@
 import socket
 import os
 import time
+import queue
 
 from PyQt5 import QtGui
 
@@ -74,7 +75,7 @@ def sweep_network_fr(job_queue, results_queue):
         job_queue.task_done()
 
 
-def get_infos_thread(skt, ip, port, info):
+def get_info_process(skt, ip, port, info_queue):
     while True:
         # pour être complémentaire à la fonction du UI (ne pas le faire 2 fois de suite en startant/changeant de camera)
         time.sleep(5)
@@ -86,19 +87,39 @@ def get_infos_thread(skt, ip, port, info):
         print(data)"""
         data = "50%"
         print(data)
-        info.setText(" Informations\n Nom de la camera: " + str(ip[1] + 1) + "\n Adresse IP: " + str(ip[0]) +
-                    "\n Batterie restante: " + str(data))
+        info_queue.put((str(ip[1] + 1), str(ip[0]), str(data)))
 
 
-def get_preview(skt, ip, port, preview):
+def get_preview_process(skt, ip, port, preview_queue):
     while True:
         print("Getting preview")
-        """skt.connect((ip[0], port))
+        """skt.connect((ip, port))
         skt.send(b"get_infos")
         data = skt.recv(1024)
         data = data.decode('utf-8')
         print(data)"""
         data = "50 images"
         print(data)
-        preview.setPixmap(QtGui.QPixmap(data))
+        preview_queue.put(data)
+        time.sleep(1)
+
+
+def update_infos_thread(info_queue, info):
+    while True:
+        try:
+            infos = info_queue.get()
+            print("Updating info")
+            info.setText(" Informations\n Nom de la camera: Camera " + str(infos[0]) +
+                         "\n Adresse IP: " + str(infos[1]) +
+                         "\n Batterie restante: " + str(infos[2]))
+        except queue.Empty:
+            time.sleep(5)
+
+
+def update_preview_thread(thread_queue, preview):
+    try:
+        previews = thread_queue.get()
+        print("updating preview")
+        preview.setPixmap(QtGui.QPixmap(previews))
+    except queue.Empty:
         time.sleep(1)
