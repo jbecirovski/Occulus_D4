@@ -93,13 +93,25 @@ while True:
         elif data[0] == "delete":
             if command == "delete_file":
                 # on va chercher les différents fichiers à supprimer
-                print("Deleting file!")
+                fichiers = data[2]
+                fichiers = fichiers.split(',')
+                for i in range(len(fichiers)):
+                    cmd = "rm /home/pi/recordings/" + str(fichiers[i])
+                    process = subprocess.Popen(cmd.split())
+                    output, error = process.communicate()
+                print("Deleting file(s)!")
+                rep = f"deleted {len(fichiers)} recordings"
             elif command == "delete_all":
+                cmd = "rm /home/pi/recordings/*"
+                process = subprocess.Popen(cmd.split())
+                output, error = process.communicate()
                 print("Deleting all files!")
+                rep = "deleted all recordings"
             else:
                 break
 
         elif data[0] == "download":
+            # TODO faire le download selon comment va marcher le serveur FTP
             if command == "download_file":
                 print("Downloading file!")
             elif command == "download_all":

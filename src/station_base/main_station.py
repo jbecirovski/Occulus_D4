@@ -593,14 +593,16 @@ class FileWindow(QtWidgets.QWidget):
             files = ""
             for i in range(len(self.selected_files)):
                 files = files + self.selected_files[i] + ","
-            self.skt.send(b"download_file," + files)"""
+            self.skt.send(b"delete_file_" + files)"""
             print("Deleting selected file from camera!")
+            self.refresh()
 
     def delete_all(self):
         """ip = self.host[0]
         self.skt.connect((ip, self.port))
         self.skt.send(b"delete_all")"""
         print("Deleting all files from camera!")
+        self.refresh()
 
 
 if __name__ == "__main__":
