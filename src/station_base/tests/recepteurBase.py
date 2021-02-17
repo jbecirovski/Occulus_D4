@@ -1,7 +1,7 @@
 # script pour tester la communication Wi-Fi du récepteur
 
 import socket
-from src.other.functions import get_wifi_ip_address
+from src.station_base.other import get_wifi_ip_address
 
 # to get local IP address of WiFi connection
 localIP = get_wifi_ip_address()

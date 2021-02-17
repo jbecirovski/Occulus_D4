@@ -7,7 +7,7 @@ import ctypes
 import queue
 from multiprocessing import Process, Queue
 
-import src.other.functions
+import src.station_base.other.functions
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
@@ -22,7 +22,7 @@ class Window(QtWidgets.QMainWindow):
         self.setFixedHeight(800)
         self.setFixedWidth(1200)
         self.setWindowTitle("Application Camera")
-        self.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
+        self.setWindowIcon(QtGui.QIcon(r"../ressource/protolabLogo.png"))
 
         # paramètre de la classe
         self.active_camera = 0
@@ -39,7 +39,7 @@ class Window(QtWidgets.QMainWindow):
             self.osLanguage = 'en'
 
         # initialisation du port de communication
-        self.localIP = src.other.functions.get_wifi_ip_address()
+        self.localIP = src.station_base.other.functions.get_wifi_ip_address()
 
         # initialisation des variables constantes
         self.HOSTS = []
@@ -161,7 +161,7 @@ class Window(QtWidgets.QMainWindow):
         self.preview.move(200, 100)
         self.preview.resize(700, 600)
         self.preview.setAlignment(QtCore.Qt.AlignCenter)
-        self.preview.setPixmap(QtGui.QPixmap(r"ressource/protolabLogo.png"))
+        self.preview.setPixmap(QtGui.QPixmap(r"../ressource/protolabLogo.png"))
         self.preview.setStyleSheet("border: 2px solid grey;")
 
         self.preview_button.setText("Start preview")
@@ -200,19 +200,19 @@ class Window(QtWidgets.QMainWindow):
         QtWidgets.qApp.setPalette(self.palette)
 
         # créer le process pour aller chercher les infos de la caméra
-        self.info_process = Process(target=src.other.functions.get_info_process,
+        self.info_process = Process(target=src.station_base.other.functions.get_info_process,
                                     args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info_queue,))
         self.info_process.start()
 
         # créer le thread pour aller updater l'info de la caméra
-        self.info_thread = threading.Thread(target=src.other.functions.update_infos_thread,
-                                           args=(self.info_queue, self.info,),
-                                           daemon=True).start()
+        self.info_thread = threading.Thread(target=src.station_base.other.functions.update_infos_thread,
+                                            args=(self.info_queue, self.info,),
+                                            daemon=True).start()
 
         # créer le thread pour aller updater le preview
-        self.preview_thread = threading.Thread(target=src.other.functions.update_preview_thread,
-                                              args=(self.preview_queue, self.preview,),
-                                              daemon=True).start()
+        self.preview_thread = threading.Thread(target=src.station_base.other.functions.update_preview_thread,
+                                               args=(self.preview_queue, self.preview,),
+                                               daemon=True).start()
 
     # méthodes de classe
     def start_stop_preview(self):
@@ -222,13 +222,13 @@ class Window(QtWidgets.QMainWindow):
             print("Stop preview")
             # stop le process pour aller chercher les images de preview
             self.preview_process.terminate()
-            self.preview.setPixmap(QtGui.QPixmap(r"ressource/protolabLogo.png"))
+            self.preview.setPixmap(QtGui.QPixmap(r"../ressource/protolabLogo.png"))
         else:
             self.active_preview = True
             self.preview_button.setText("Stop preview")
             print("Start preview")
             # start le process pour aller chercher les images de preview
-            self.preview_process = Process(target=src.other.functions.get_preview_process,
+            self.preview_process = Process(target=src.station_base.other.functions.get_preview_process,
                                            args=(self.skt, self.HOSTS[self.active_camera][0], self.PORT,
                                                  self.preview_queue,))
             self.preview_process.start()
@@ -241,7 +241,7 @@ class Window(QtWidgets.QMainWindow):
             self.get_infos()
             # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
             self.info_process.terminate()
-            self.info_process = Process(target=src.other.functions.get_info_process,
+            self.info_process = Process(target=src.station_base.other.functions.get_info_process,
                                         args=(self.skt, self.HOSTS[new_active_camera], self.PORT, self.info_queue,))
             self.info_process.start()
         else:
@@ -272,12 +272,12 @@ class Window(QtWidgets.QMainWindow):
 
         if self.osLanguage == 'fr':
             for i in range(num_of_threads):
-                thread = threading.Thread(target=src.other.functions.sweep_network_fr,
+                thread = threading.Thread(target=src.station_base.other.functions.sweep_network_fr,
                                           args=(jobs, results), daemon=True)
                 thread.start()
         else:
             for i in range(num_of_threads):
-                thread = threading.Thread(target=src.other.functions.sweep_network, args=(jobs, results), daemon=True)
+                thread = threading.Thread(target=src.station_base.other.functions.sweep_network, args=(jobs, results), daemon=True)
                 thread.start()
 
         t1 = time.time()
@@ -347,7 +347,7 @@ class Window(QtWidgets.QMainWindow):
         choice = QtWidgets.QMessageBox.question(self, "Extract!", "Are you sure you want to quit",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
-            src.other.functions.close_port(self.skt)
+            src.station_base.other.functions.close_port(self.skt)
             self.info_process.terminate()
             self.preview_process.terminate()
             sys.exit()
@@ -412,7 +412,7 @@ class Window(QtWidgets.QMainWindow):
     def style_pop_up(self):
         msg = QMessageBox()
         msg.setWindowTitle("Style choice")
-        msg.setWindowIcon(QtGui.QIcon("ressource/protolabLogo.png"))
+        msg.setWindowIcon(QtGui.QIcon("../ressource/protolabLogo.png"))
         msg.setText("Choose the window style")
         msg.setStandardButtons(QMessageBox.Apply | QMessageBox.Cancel)
         x = msg.exec()
@@ -431,7 +431,7 @@ class FileWindow(QtWidgets.QWidget):
         self.setFixedHeight(600)
         self.setFixedWidth(1000)
         self.setWindowTitle("Manage Files")
-        self.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
+        self.setWindowIcon(QtGui.QIcon(r"../ressource/protolabLogo.png"))
 
         # déclaration de la variable pour garder la valeur du fichier sélectionné
         self.selected_file = None
@@ -538,7 +538,7 @@ class FileWindow(QtWidgets.QWidget):
             msg = QtWidgets.QMessageBox()
             msg.setText("Please select a file before downloading.")
             msg.setWindowTitle("Download error")
-            msg.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
+            msg.setWindowIcon(QtGui.QIcon(r"../ressource/protolabLogo.png"))
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
         else:
@@ -552,7 +552,7 @@ class FileWindow(QtWidgets.QWidget):
             msg = QtWidgets.QMessageBox()
             msg.setText("Please select a file before downloading.")
             msg.setWindowTitle("Delete error")
-            msg.setWindowIcon(QtGui.QIcon(r"ressource/protolabLogo.png"))
+            msg.setWindowIcon(QtGui.QIcon(r"../ressource/protolabLogo.png"))
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
         else:
