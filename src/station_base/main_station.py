@@ -421,7 +421,6 @@ class Window(QtWidgets.QMainWindow):
         x = msg.exec()
 
 
-# TODO ajouter la possibilité de télécharger, deleter plus d'un fichier mais pas tous(liste de fichiers sélectionnés)
 # classe pour la fenêtre de menu pour manager les fichiers
 class FileWindow(QtWidgets.QWidget):
 

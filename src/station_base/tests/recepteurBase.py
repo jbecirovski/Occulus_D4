@@ -1,14 +1,14 @@
 # script pour tester la communication Wi-Fi du récepteur
 
 import socket
-from src.other.functions import get_wifi_ip_address
 
 # to get local IP address of WiFi connection
-localIP = get_wifi_ip_address()
-# TODO remove print
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("8.8.8.8", 80))
+localIP = s.getsockname()[0]
 print(localIP)
+s.close()
 
-# TODO change to the IPs of the cameras
 HOST = ['192.168.50.160', '192.168.50.161']  # à modifier pour correspondre aux IPs des cameras
 PORT = 8000
 
