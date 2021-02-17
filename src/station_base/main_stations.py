@@ -1,3 +1,5 @@
+# script pour le fonctionnement de la station de base
+
 import locale
 import socket
 import sys
