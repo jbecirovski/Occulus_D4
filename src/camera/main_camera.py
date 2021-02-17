@@ -119,9 +119,29 @@ while True:
 
         else:
             if command == "check_files":
+                cmd = "ls /home/pi/recordings/"
+                process = subprocess.Popen(cmd.split())
+                output, error = process.communicate()
+                output = output.decode()
+                print(output)
+                files = output.split(" ")
+                names = ""
+                for i in range(len(files)):
+                    names = names + "," + files[0]
                 print("Checking files!")
+                rep = names
             elif command == "refresh_files":
+                cmd = "ls /home/pi/recordings/"
+                process = subprocess.Popen(cmd.split())
+                output, error = process.communicate()
+                output = output.decode()
+                print(output)
+                files = output.split(" ")
+                names = ""
+                for i in range(len(files)):
+                    names = names + "," + files[0]
                 print("Refreshing files!")
+                rep = names
             else:
                 break
 
