@@ -1,6 +1,6 @@
 import queue
 import threading
-from src.station_base.other.functions import sweep_network, get_wifi_ip_address
+from src.other.functions import sweep_network, get_wifi_ip_address
 
 if __name__ == '__main__':
     # scanner naïf des adresses ip

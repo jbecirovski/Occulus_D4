@@ -94,7 +94,7 @@ def get_preview_process(skt, ip, port, preview_queue):
     while True:
         print("Getting preview")
         """skt.connect((ip, port))
-        skt.send(b"get_infos")
+        skt.send(b"get_preview")
         data = skt.recv(1024)
         data = data.decode('utf-8')
         print(data)"""

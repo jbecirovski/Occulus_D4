@@ -9,13 +9,12 @@ import ctypes
 import queue
 from multiprocessing import Process, Queue
 
-import src.station_base.other.functions
+import src.other.functions
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
 
-# TODO faire un process pour aller chercher l'info, le mettre dans une queue et le faire traiter par un thread
 class Window(QtWidgets.QMainWindow):
 
     # contructeur de la classe
@@ -41,7 +40,7 @@ class Window(QtWidgets.QMainWindow):
             self.osLanguage = 'en'
 
         # initialisation du port de communication
-        self.localIP = src.station_base.other.functions.get_wifi_ip_address()
+        self.local_ip = src.other.functions.get_wifi_ip_address()
 
         # initialisation des variables constantes
         self.HOSTS = []
@@ -56,7 +55,7 @@ class Window(QtWidgets.QMainWindow):
 
         # TODO À voir si ça affecte les performances lors de l'envoi de gros fichiers (images)
         # bind un port pour que l'hôte utilise toujours le même port(éviter création trop ports différents)
-        self.skt.bind((self.localIP, 61515))
+        self.skt.bind((self.local_ip, 60500))
 
         # déclaration des différents composants de l'interface graphique
         self.btn_quit = QtWidgets.QPushButton("Quit", self)
@@ -202,17 +201,17 @@ class Window(QtWidgets.QMainWindow):
         QtWidgets.qApp.setPalette(self.palette)
 
         # créer le process pour aller chercher les infos de la caméra
-        self.info_process = Process(target=src.station_base.other.functions.get_info_process,
+        self.info_process = Process(target=src.other.functions.get_info_process,
                                     args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info_queue,))
         self.info_process.start()
 
         # créer le thread pour aller updater l'info de la caméra
-        self.info_thread = threading.Thread(target=src.station_base.other.functions.update_infos_thread,
+        self.info_thread = threading.Thread(target=src.other.functions.update_infos_thread,
                                             args=(self.info_queue, self.info,),
                                             daemon=True).start()
 
         # créer le thread pour aller updater le preview
-        self.preview_thread = threading.Thread(target=src.station_base.other.functions.update_preview_thread,
+        self.preview_thread = threading.Thread(target=src.other.functions.update_preview_thread,
                                                args=(self.preview_queue, self.preview,),
                                                daemon=True).start()
 
@@ -230,7 +229,7 @@ class Window(QtWidgets.QMainWindow):
             self.preview_button.setText("Stop preview")
             print("Start preview")
             # start le process pour aller chercher les images de preview
-            self.preview_process = Process(target=src.station_base.other.functions.get_preview_process,
+            self.preview_process = Process(target=src.other.functions.get_preview_process,
                                            args=(self.skt, self.HOSTS[self.active_camera][0], self.PORT,
                                                  self.preview_queue,))
             self.preview_process.start()
@@ -243,26 +242,17 @@ class Window(QtWidgets.QMainWindow):
             self.get_infos()
             # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
             self.info_process.terminate()
-            self.info_process = Process(target=src.station_base.other.functions.get_info_process,
+            self.info_process = Process(target=src.other.functions.get_info_process,
                                         args=(self.skt, self.HOSTS[new_active_camera], self.PORT, self.info_queue,))
             self.info_process.start()
         else:
             pass
 
-    def start_camera(self):
-        """ip = self.HOSTS[self.active_camera][0]
-        self.skt.connect((ip, self.PORT))
-        self.skt.send(b"start_camera")
-        data = self.skt.recv(1024)
-        data = data.decode('utf-8')
-        print(data)"""
-        print("Starting camera: " + str(self.active_camera + 1))
-
     # TODO À changer avec range d'adresse des caméras
     def detect_cameras(self):
         print("Detect cameras!")
-        localIP = self.localIP.split('.')
-        network = localIP[0] + '.' + localIP[1] + '.' + localIP[2] + '.'
+        local_ip = self.local_ip.split('.')
+        network = local_ip[0] + '.' + local_ip[1] + '.' + local_ip[2] + '.'
         size = 20
         num_of_threads = 20
         jobs = queue.Queue()
@@ -274,12 +264,12 @@ class Window(QtWidgets.QMainWindow):
 
         if self.osLanguage == 'fr':
             for i in range(num_of_threads):
-                thread = threading.Thread(target=src.station_base.other.functions.sweep_network_fr,
+                thread = threading.Thread(target=src.other.functions.sweep_network_fr,
                                           args=(jobs, results), daemon=True)
                 thread.start()
         else:
             for i in range(num_of_threads):
-                thread = threading.Thread(target=src.station_base.other.functions.sweep_network, args=(jobs, results), daemon=True)
+                thread = threading.Thread(target=src.other.functions.sweep_network, args=(jobs, results), daemon=True)
                 thread.start()
 
         t1 = time.time()
@@ -307,6 +297,15 @@ class Window(QtWidgets.QMainWindow):
             for i in range(len(text_results)):
                 self.camera_combo_box.addItem("Camera " + str(i + 1))
         return text_results
+
+    def start_camera(self):
+        """ip = self.HOSTS[self.active_camera][0]
+        self.skt.connect((ip, self.PORT))
+        self.skt.send(b"start_camera")
+        data = self.skt.recv(1024)
+        data = data.decode('utf-8')
+        print(data)"""
+        print("Starting camera: " + str(self.active_camera + 1))
 
     def stop_camera(self):
         """ip = self.HOSTS[self.active_camera][0]
@@ -349,9 +348,11 @@ class Window(QtWidgets.QMainWindow):
         choice = QtWidgets.QMessageBox.question(self, "Extract!", "Are you sure you want to quit",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
-            src.station_base.other.functions.close_port(self.skt)
+            src.other.functions.close_port(self.skt)
             self.info_process.terminate()
             self.preview_process.terminate()
+            self.info_process.join()
+            self.preview_process.join()
             sys.exit()
         else:
             pass
@@ -420,6 +421,7 @@ class Window(QtWidgets.QMainWindow):
         x = msg.exec()
 
 
+# TODO ajouter la possibilité de télécharger, deleter plus d'un fichier mais pas tous(liste de fichiers sélectionnés)
 # classe pour la fenêtre de menu pour manager les fichiers
 class FileWindow(QtWidgets.QWidget):
 
@@ -445,7 +447,9 @@ class FileWindow(QtWidgets.QWidget):
         self.quit_button = QtWidgets.QPushButton("Quit", self)
         self.refresh_button = QtWidgets.QPushButton("Refresh", self)
         self.download_button = QtWidgets.QPushButton("Download", self)
+        self.download_all_button = QtWidgets.QPushButton("Download All", self)
         self.delete_button = QtWidgets.QPushButton("Delete", self)
+        self.delete_all_button = QtWidgets.QPushButton("Delete All", self)
         self.path = QtWidgets.QLabel(self)
         self.file_label = QtWidgets.QLabel(self)
         self.selected_file_label = QtWidgets.QLabel(self)
@@ -471,21 +475,29 @@ class FileWindow(QtWidgets.QWidget):
         self.file_label.resize(40, 20)
         self.file_label.setText("Files: ")
 
-        self.quit_button.resize(120, 60)
-        self.quit_button.move(740, 530)
-        self.quit_button.clicked.connect(self.quit)
-
         self.refresh_button.resize(120, 60)
-        self.refresh_button.move(140, 530)
+        self.refresh_button.move(40, 530)
         self.refresh_button.clicked.connect(self.refresh)
 
         self.download_button.resize(120, 60)
-        self.download_button.move(340, 530)
+        self.download_button.move(200, 530)
         self.download_button.clicked.connect(self.download)
 
+        self.download_all_button.resize(120, 60)
+        self.download_all_button.move(360, 530)
+        self.download_all_button.clicked.connect(self.download_all)
+
         self.delete_button.resize(120, 60)
-        self.delete_button.move(540, 530)
+        self.delete_button.move(520, 530)
         self.delete_button.clicked.connect(self.delete)
+
+        self.delete_all_button.resize(120, 60)
+        self.delete_all_button.move(680, 530)
+        self.delete_all_button.clicked.connect(self.delete_all)
+
+        self.quit_button.resize(120, 60)
+        self.quit_button.move(840, 530)
+        self.quit_button.clicked.connect(self.quit)
 
         self.path.resize(600, 20)
         self.path.move(10, 0)
@@ -549,6 +561,12 @@ class FileWindow(QtWidgets.QWidget):
             self.skt.send(b"download_file_" + self.selected_file)"""
             print("Downloading selected file to computer!")
 
+    def download_all(self):
+        """ip = self.host[0]
+        self.skt.connect((ip, self.port))
+        self.skt.send(b"download_all")"""
+        print("Deleting all files from camera!")
+
     def delete(self):
         if self.selected_file is None:
             msg = QtWidgets.QMessageBox()
@@ -562,6 +580,12 @@ class FileWindow(QtWidgets.QWidget):
             self.skt.connect((ip, self.port))
             self.skt.send(b"delete_file_ + self.selected_file")"""
             print("Deleting selected file from camera!")
+
+    def delete_all(self):
+        """ip = self.host[0]
+        self.skt.connect((ip, self.port))
+        self.skt.send(b"delete_all")"""
+        print("Deleting all files from camera!")
 
 
 if __name__ == "__main__":

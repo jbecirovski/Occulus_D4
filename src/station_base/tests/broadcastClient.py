@@ -1,7 +1,7 @@
 # script pour tester le broadcasting côté client (caméras)
 
 import socket
-from src.station_base.other.functions import get_wifi_ip_address
+from src.other.functions import get_wifi_ip_address
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 local_ip = get_wifi_ip_address().split('.')

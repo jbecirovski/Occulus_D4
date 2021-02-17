@@ -2,7 +2,7 @@
 
 # TODO Regarder pour mettre le process en sleep lorsque pas actif (pendant qu"il n"y a aucune connexion)?
 import socket
-from src.station_base.other.functions import get_wifi_ip_address
+from src.other.functions import get_wifi_ip_address
 
 # to get local IP address of WiFi connection
 localIP = get_wifi_ip_address()
