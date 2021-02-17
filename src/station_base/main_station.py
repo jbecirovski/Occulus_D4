@@ -438,7 +438,7 @@ class FileWindow(QtWidgets.QWidget):
         self.setWindowIcon(QtGui.QIcon(r"../ressource/protolabLogo.png"))
 
         # déclaration de la variable pour garder la valeur du fichier sélectionné
-        self.selected_file = None
+        self.selected_files = []
 
         # déclaration de la variable pour garder les boutons
         self.button_list = []
@@ -469,7 +469,7 @@ class FileWindow(QtWidgets.QWidget):
     def create_ui(self):
         self.selected_file_label.move(300, 20)
         self.selected_file_label.resize(700, 20)
-        self.selected_file_label.setText("Selected file: ")
+        self.selected_file_label.setText("Selected file(s): ")
 
         self.file_label.move(10, 20)
         self.file_label.resize(40, 20)
@@ -510,15 +510,25 @@ class FileWindow(QtWidgets.QWidget):
         data = self.skt.recv(1024)
         data = data.decode('utf-8')
         print(data)"""
-        data = "Fichier1-Fichier2-Fichier3-Fichier4-Fichier5-Fichier6-Fichier7-Fichier8-Fichier9-Fichier10"
-        data = data.split('-')
+        data = "Fichier1,Fichier2,Fichier3,Fichier4,Fichier5,Fichier6,Fichier7,Fichier8,Fichier9,Fichier10"
+        data = data.split(',')
         return data
 
     def select_file(self):
         clicked_button = self.sender()
         name = clicked_button.objectName()
-        self.selected_file = name
-        self.selected_file_label.setText("Selected file: " + self.selected_file)
+
+        # on regarde si le nom est déjà dans la liste
+        if name not in self.selected_files:
+            self.selected_files.append(name)
+        else:
+            self.selected_files.remove(name)
+
+        # on met à jour la liste des nom de fichier
+        files = ""
+        for i in range(len(self.selected_files)):
+            files = files + self.selected_files[i] + ", "
+        self.selected_file_label.setText("Selected file(s): " + files)
 
     def quit(self):
         self.close()
@@ -535,8 +545,8 @@ class FileWindow(QtWidgets.QWidget):
         print(data)
         self.fill_files(data)"""
         print("Refreshing file menu window!")
-        data = "Fichier1-Fichier2-Fichier3-Fichier4-Fichier5"
-        data = data.split("-")
+        data = "Fichier1,Fichier2,Fichier3,Fichier4,Fichier5"
+        data = data.split(",")
         for i in range(len(data)):
             self.button_list.append(QtWidgets.QPushButton(data[i], self))
             self.button_list[i].setObjectName(data[i])
@@ -544,11 +554,11 @@ class FileWindow(QtWidgets.QWidget):
             self.button_list[i].resize(960, 20)
             self.button_list[i].released.connect(self.select_file)
             self.button_list[i].show()
-        self.selected_file = None
+        self.selected_files = []
         self.selected_file_label.setText("Selected file: ")
 
     def download(self):
-        if self.selected_file is None:
+        if not self.selected_files:
             msg = QtWidgets.QMessageBox()
             msg.setText("Please select a file before downloading.")
             msg.setWindowTitle("Download error")
@@ -558,7 +568,10 @@ class FileWindow(QtWidgets.QWidget):
         else:
             """ip = self.host[0]
             self.skt.connect((ip, self.port))
-            self.skt.send(b"download_file_" + self.selected_file)"""
+            files = ""
+            for i in range(len(self.selected_files)):
+                files = files + self.selected_files[i] + ","
+            self.skt.send(b"download_file," + files)"""
             print("Downloading selected file to computer!")
 
     def download_all(self):
@@ -568,7 +581,7 @@ class FileWindow(QtWidgets.QWidget):
         print("Deleting all files from camera!")
 
     def delete(self):
-        if self.selected_file is None:
+        if not self.selected_files:
             msg = QtWidgets.QMessageBox()
             msg.setText("Please select a file before downloading.")
             msg.setWindowTitle("Delete error")
@@ -578,7 +591,10 @@ class FileWindow(QtWidgets.QWidget):
         else:
             """ip = self.host[0]
             self.skt.connect((ip, self.port))
-            self.skt.send(b"delete_file_ + self.selected_file")"""
+            files = ""
+            for i in range(len(self.selected_files)):
+                files = files + self.selected_files[i] + ","
+            self.skt.send(b"download_file," + files)"""
             print("Deleting selected file from camera!")
 
     def delete_all(self):

@@ -28,7 +28,10 @@ while True:
         command = data[0] + "_" + data[1]
 
         # tous les choix possibles d'actions pour la caméra
-        if data[0] == "get":
+        if data[0] == "broadcast":
+            print("Sending IP!")
+
+        elif data[0] == "get":
             if command == "get_preview":
                 print("Getting preview!")
             elif command == "get_infos":
