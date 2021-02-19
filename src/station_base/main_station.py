@@ -350,9 +350,14 @@ class Window(QtWidgets.QMainWindow):
         if choice == QtWidgets.QMessageBox.Yes:
             src.other.functions.close_port(self.skt)
             self.info_process.terminate()
-            self.preview_process.terminate()
             self.info_process.join()
-            self.preview_process.join()
+
+            # il est possible de quitter l'application sans avoir starter le process pour les previews
+            try:
+                self.preview_process.terminate()
+                self.preview_process.join()
+            except AttributeError:
+                pass
             sys.exit()
         else:
             pass
