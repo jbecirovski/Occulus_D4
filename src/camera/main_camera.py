@@ -23,6 +23,10 @@ camera = PiCamera()
 camera.resolution = (1920, 1080)
 camera.framerate = 30
 
+# on met la camera en preview pour la préparer et on la garde afin de s'assurer qu'elle soit prête à prendre une photo
+# à n'importe quel moment
+camera.start_preview()
+
 # TODO Voir si on doit le garder en blocking si plusieurs cameras ou envoie des images
 skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -50,13 +54,35 @@ while True:
 
         elif data[0] == "get":
             if command == "get_preview":
-                # TODO faire la fonction pour aller get le preview de la caméra
+                # on capture une image avec la caméra
+                # TODO à voir si c'est trop gros pour la lecture de l'autre côté
+                camera.capture("/home/pi/preview/preview.jpg")
+
+                # on va ouvrir le fichier de l'image
+                file = open("/home/pi/preview/preview.jpg", "wb")
+
+                # on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
+                read = file.read(4096)
+                while read:
+                    connection.send(read)
+                    read = file.read(4096)
+
+                # on vient fermer le fichier pour éviter des problèmes
+                file.close()
+
+                # on vient le supprimer pour pouvoir réécrire un fichier avec le même nom
+                cmd = "rm /home/pi/preview/preview.jpg"
+                process = subprocess.Popen(cmd.split())
+                process.communicate()
                 print("Getting preview!")
             elif command == "get_infos":
                 # TODO faire la fonction pour aller get la charge de la batterie
                 battery = "50%"
                 rep = local_ip + "," + battery
                 print("Getting infos!")
+
+                # on envoie la réponse à la station de base
+                connection.send(rep.encode('utf-8'))
             else:
                 break
 
@@ -64,29 +90,23 @@ while True:
             date = datetime.now()
             date = date.strftime("%d/%m/%Y %H:%M:%S")
             camera.start_recording("/home/pi/recordings/" + date + ".h264")
-            rep = "camera started"
             print("Starting camera!")
 
         elif data[0] == "stop":
             # TODO à voir si ça soulève des erreurs de faire comme ça
             camera.stop_recording()
-            rep = "camera stopped"
             print("Stopping camera!")
 
         elif data[0] == "move":
             # TODO faire fonction pour aller bouger la camera
             if command == "move_up":
                 print("Moving up!")
-                rep = "camera moved up"
             elif command == "move_right":
                 print("Moving right!")
-                rep = "camera moved right"
             elif command == "move_left":
                 print("Moving left!")
-                rep = "camera moved left"
             elif command == "move_down":
                 print("Moving down!")
-                rep = "camera moved down"
             else:
                 break
 
@@ -100,13 +120,12 @@ while True:
                     process = subprocess.Popen(cmd.split())
                     output, error = process.communicate()
                 print("Deleting file(s)!")
-                rep = f"deleted {len(fichiers)} recordings"
             elif command == "delete_all":
                 cmd = "rm /home/pi/recordings/*"
                 process = subprocess.Popen(cmd.split())
                 output, error = process.communicate()
                 print("Deleting all files!")
-                rep = "deleted all recordings"
+
             else:
                 break
 
@@ -130,6 +149,9 @@ while True:
                     names = names + "," + files[0]
                 print("Checking files!")
                 rep = names
+
+                # on envoie la réponse à la station de base
+                connection.send(rep.encode('utf-8'))
             elif command == "refresh_files":
                 cmd = "ls /home/pi/recordings/"
                 process = subprocess.Popen(cmd.split())
@@ -142,8 +164,11 @@ while True:
                     names = names + "," + files[0]
                 print("Refreshing files!")
                 rep = names
+
+                # on envoie la réponse à la station de base
+                connection.send(rep.encode('utf-8'))
             else:
                 break
 
-        # on envoie la réponse à la station de base
-        connection.sendto(rep.encode('utf-8'), (HOST_IP, HOST_PORT))
+        # on ferme la connection
+        connection.close()
