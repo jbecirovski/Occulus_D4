@@ -56,10 +56,10 @@ while True:
             if command == "get_preview":
                 # on capture une image avec la caméra
                 # TODO à voir si c'est trop gros pour la lecture de l'autre côté
-                camera.capture("/home/pi/preview/preview.jpg")
+                camera.capture("/home/ProtolabQuebec/preview/preview.jpg")
 
                 # on va ouvrir le fichier de l'image
-                file = open("/home/pi/preview/preview.jpg", "wb")
+                file = open("/home/ProtolabQuebec/preview/preview.jpg", "wb")
 
                 # on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
                 read = file.read(4096)
@@ -71,7 +71,7 @@ while True:
                 file.close()
 
                 # on vient le supprimer pour pouvoir réécrire un fichier avec le même nom
-                cmd = "rm /home/pi/preview/preview.jpg"
+                cmd = "rm /home/ProtolabQuebec/preview/preview.jpg"
                 process = subprocess.Popen(cmd.split())
                 process.communicate()
                 print("Getting preview!")
@@ -89,7 +89,7 @@ while True:
         elif data[0] == "start":
             date = datetime.now()
             date = date.strftime("%d/%m/%Y %H:%M:%S")
-            camera.start_recording("/home/pi/recordings/" + date + ".h264")
+            camera.start_recording("/home/ProtolabQuebec/recordings/" + date + ".h264")
             print("Starting camera!")
 
         elif data[0] == "stop":
@@ -116,12 +116,12 @@ while True:
                 fichiers = data[2]
                 fichiers = fichiers.split(',')
                 for i in range(len(fichiers)):
-                    cmd = "rm /home/pi/recordings/" + str(fichiers[i])
+                    cmd = "rm /home/ProtolabQuebec/recordings/" + str(fichiers[i])
                     process = subprocess.Popen(cmd.split())
                     output, error = process.communicate()
                 print("Deleting file(s)!")
             elif command == "delete_all":
-                cmd = "rm /home/pi/recordings/*"
+                cmd = "rm /home/ProtolabQuebec/recordings/*"
                 process = subprocess.Popen(cmd.split())
                 output, error = process.communicate()
                 print("Deleting all files!")
@@ -138,7 +138,7 @@ while True:
 
         else:
             if command == "check_files":
-                cmd = "ls /home/pi/recordings/"
+                cmd = "ls /home/ProtolabQuebec/recordings/"
                 process = subprocess.Popen(cmd.split())
                 output, error = process.communicate()
                 output = output.decode()
@@ -153,7 +153,7 @@ while True:
                 # on envoie la réponse à la station de base
                 connection.send(rep.encode('utf-8'))
             elif command == "refresh_files":
-                cmd = "ls /home/pi/recordings/"
+                cmd = "ls /home/ProtolabQuebec/recordings/"
                 process = subprocess.Popen(cmd.split())
                 output, error = process.communicate()
                 output = output.decode()
