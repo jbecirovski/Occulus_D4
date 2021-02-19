@@ -94,6 +94,7 @@ while True:
                 process = subprocess.Popen(cmd.split())
                 process.communicate()
                 print("Getting preview!")
+
             elif command == "get_infos":
                 # TODO faire la fonction pour aller get la charge de la batterie
                 battery = "50%"
@@ -120,12 +121,16 @@ while True:
             # TODO faire fonction pour aller bouger la camera
             if command == "move_up":
                 print("Moving up!")
+
             elif command == "move_right":
                 print("Moving right!")
+
             elif command == "move_left":
                 print("Moving left!")
+
             elif command == "move_down":
                 print("Moving down!")
+
             else:
                 break
 
@@ -139,6 +144,7 @@ while True:
                     process = subprocess.Popen(cmd.split())
                     output, error = process.communicate()
                 print("Deleting file(s)!")
+
             elif command == "delete_all":
                 cmd = "rm /home/ProtolabQuebec/recordings/*"
                 process = subprocess.Popen(cmd.split())
@@ -152,6 +158,7 @@ while True:
             # TODO faire le download selon comment va marcher le serveur FTP
             if command == "download_file":
                 print("Downloading file!")
+
             elif command == "download_all":
                 print("Downloading all files!")
 
@@ -171,6 +178,7 @@ while True:
 
                 # on envoie la réponse à la station de base
                 connection.send(rep.encode('utf-8'))
+
             elif command == "refresh_files":
                 cmd = "ls /home/ProtolabQuebec/recordings/"
                 process = subprocess.Popen(cmd.split())
@@ -186,6 +194,7 @@ while True:
 
                 # on envoie la réponse à la station de base
                 connection.send(rep.encode('utf-8'))
+
             else:
                 break
 
