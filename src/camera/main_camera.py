@@ -1,11 +1,21 @@
 # script pour le fonctionnement des caméras
 
 import socket
-import threading
 import subprocess
 
-from picamera import PiCamera
+# from picamera import PiCamera
 from datetime import datetime
+from multiprocessing import Process
+
+
+# définition de la fonction pour aller lire l'image dans un process externe (non-bloquant)
+def read_file(input_file, send_to):
+    # on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
+    image = input_file.read(4096)
+    while image:
+        send_to.send(read)
+        image = file.read(4096)
+
 
 # on définit les paramètres pour la communication socket
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -25,6 +35,7 @@ camera.framerate = 30
 
 # on met la camera en preview pour la préparer et on la garde afin de s'assurer qu'elle soit prête à prendre une photo
 # à n'importe quel moment
+# TODO à voir si ça affecte les performances
 camera.start_preview()
 
 # TODO Voir si on doit le garder en blocking si plusieurs cameras ou envoie des images
@@ -61,16 +72,24 @@ while True:
                 # on va ouvrir le fichier de l'image
                 file = open("/home/ProtolabQuebec/preview/preview.jpg", "wb")
 
-                # on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
+                # on crée le process pour aller faire la lecture de l'image et l'envoyer (child process)
+                read_process = Process(target=read_file, args=(file, connection))
+                read_process.start()
+
+                # TODO à voir si c'est limitant
+                # on attend que le process ait fini avant de fermer le fichier
+                read_process.join()
+
+                """# on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
                 read = file.read(4096)
                 while read:
                     connection.send(read)
-                    read = file.read(4096)
+                    read = file.read(4096)"""
 
                 # on vient fermer le fichier pour éviter des problèmes
                 file.close()
 
-                # on vient le supprimer pour pouvoir réécrire un fichier avec le même nom
+                # on vient le supprimer pour pouvoir réécrire un fichier avec le même nom (call système)
                 cmd = "rm /home/ProtolabQuebec/preview/preview.jpg"
                 process = subprocess.Popen(cmd.split())
                 process.communicate()

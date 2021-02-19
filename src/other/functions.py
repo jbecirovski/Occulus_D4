@@ -95,11 +95,14 @@ def get_preview_process(skt, ip, port, preview_queue):
         print("Getting preview")
         """skt.connect((ip, port))
         skt.send(b"get_preview")
-        data = skt.recv(1024)
-        data = data.decode('utf-8')
-        print(data)"""
-        data = "50 images"
-        print(data)
+        datas = None
+        data = skt.recv(4096)
+        while data:
+            datas = datas + data
+            data = skt.recv(4096)"""
+        read_file = open(r"../ressource/regie.png", "rb")
+        data = read_file.read()
+        read_file.close()
         preview_queue.put(data)
         time.sleep(1)
 
@@ -116,10 +119,14 @@ def update_infos_thread(info_queue, info):
             time.sleep(5)
 
 
-def update_preview_thread(thread_queue, preview):
-    try:
-        previews = thread_queue.get()
-        print("updating preview")
-        preview.setPixmap(QtGui.QPixmap(previews))
-    except queue.Empty:
-        time.sleep(1)
+def update_preview_thread(preview_queue, preview):
+    while True:
+        try:
+            image = preview_queue.get()
+            print("updating preview")
+            file = open(r"../ressource/preview.png", "wb")
+            file.write(image)
+            file.close()
+            preview.setPixmap(QtGui.QPixmap(r"../ressource/preview.png"))
+        except queue.Empty:
+            time.sleep(1)

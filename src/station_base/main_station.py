@@ -85,7 +85,7 @@ class Window(QtWidgets.QMainWindow):
         self.info_process = Process()
         self.preview_process = Process()
 
-        # déclaration des threads pour faire du pooling
+        # déclaration des threads pour faire du aller updater le UI
         self.info_thread = threading.Thread()
         self.preview_thread = threading.Thread()
 
@@ -221,13 +221,23 @@ class Window(QtWidgets.QMainWindow):
             self.active_preview = False
             self.preview_button.setText("Start preview")
             print("Stop preview")
+
             # stop le process pour aller chercher les images de preview
             self.preview_process.terminate()
             self.preview.setPixmap(QtGui.QPixmap(r"../ressource/protolabLogo.png"))
+
+            # on va overwriter le fichier preview pour le remettre à sa valeur de base
+            read_file = open(r"../ressource/protolabLogo.png", "rb")
+            data = read_file.read()
+            read_file.close()
+            write_file = open(r"../ressource/preview.png", "wb")
+            write_file.write(data)
+            write_file.close()
         else:
             self.active_preview = True
             self.preview_button.setText("Stop preview")
             print("Start preview")
+
             # start le process pour aller chercher les images de preview
             self.preview_process = Process(target=src.other.functions.get_preview_process,
                                            args=(self.skt, self.HOSTS[self.active_camera][0], self.PORT,
