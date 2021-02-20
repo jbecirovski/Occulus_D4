@@ -1,4 +1,0 @@
-Ceci est juste un fichier pour faire apparaître le dossier "fichiers" sur Github.
-Il pourra être supprimer lorsque d'autres fichiers seront mis dans ce dossier.
-
-Vincent

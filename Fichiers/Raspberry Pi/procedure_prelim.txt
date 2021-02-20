@@ -1,0 +1,18 @@
+Pour le raspberry pi des caméras:
+	1- Brancher la carte micro-SD dans l'ordinateur
+	2- Choisir l'OS Raspberry Pi OS Lite (32-bit) (Menu principal -> Raspberry Pi OS other -> Raspberry Pi OS Lite (32-bit)) sur le logiciel Raspberry Pi Manager et choisir la carte SD afin de copier l'OS de base
+	3- Démarrer le raspberry et se connecter avec le compte de base (username: pi, password: raspberry)
+	4- Ajouter un nouvel utilisateur sudo nommer ProtolabQuebec (sudo useradd -m ProtolabQuebec)
+	5- Mettre le mot de passe à Occulus (sudo passwd ProtolabQuebec)
+	6- Mettre le nouvel utilisateur ProtolabQuebec dans le groupe des sudoers (sudo usermod -a -G sudo ProtolabQuebec)
+	7- Se déconnecter avec la commande logout et se reconnecter dans le compte créer précédemment (username: ProtolabQuebec password: Occulus)
+	8- Créer un répertoire recordings et un répertoire preview dans le path /home/ProtolabQuebec (mkdir recordings et mkdir preview) 
+	9- Mettre toutes les permissions sur les deux dossiers précedemment créer (chmod 777 recordings et chmod 777 preview)
+	10- Supprimer l'ancien utilisateur en faisant (sudo userdel -r pi)
+
+Pour le router (rien de bien spécial):
+	1- Se connecter dans le router (aucun mot de passe au début)
+	2- Automatic IP (DHCP)
+	3- Aller dans Setup -> Wireless Settings et choisir les noms et mots de passe des réseaux
+	4- Aller dans Advanced -> 2.4G Advanced Wireless -> Wireless Mode à 802.11n only
+	5- Changer le mot de passe dans Tools -> password
