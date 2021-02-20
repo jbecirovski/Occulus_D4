@@ -107,9 +107,17 @@ while True:
                 break
 
         elif data[0] == "start":
-            date = datetime.now()
-            date = date.strftime("%d/%m/%Y %H:%M:%S")
-            camera.start_recording("/home/ProtolabQuebec/recordings/" + date + ".h264")
+
+            # on va chercher le nombre de fichier dans le dossier recordings pour identifier le nouvel enregistrement
+            # TODO à voir si ça marche
+            cmd = "ls /home/ProtolabQuebec/recordings/"
+            process = subprocess.Popen(cmd.split())
+            output, error = process.communicate()
+            output = output.decode()
+            print(output)
+            files = output.split(" ")
+            number = len(output) + 1
+            camera.start_recording("/home/ProtolabQuebec/recordings/" + str(number) + ".h264")
             print("Starting camera!")
 
         elif data[0] == "stop":
@@ -164,6 +172,7 @@ while True:
 
         else:
             if command == "check_files":
+                # TODO à voir si ça marche
                 cmd = "ls /home/ProtolabQuebec/recordings/"
                 process = subprocess.Popen(cmd.split())
                 output, error = process.communicate()
