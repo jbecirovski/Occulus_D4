@@ -66,6 +66,7 @@ class Window(QtWidgets.QMainWindow):
         self.btn_start_all_camera = QtWidgets.QPushButton("Start All Camera", self)
         self.btn_manage_files = QtWidgets.QPushButton("Manage Files", self)
         self.btn_stop_all_camera = QtWidgets.QPushButton("Stop All Camera", self)
+        self.btn_remove = QtWidgets.QPushButton("remove", self)
         self.btn_up_arrow = QtWidgets.QToolButton(self)
         self.moveup_key = QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Up), self)
         self.btn_left_arrow = QtWidgets.QToolButton(self)
@@ -110,6 +111,10 @@ class Window(QtWidgets.QMainWindow):
 
         self.camera_combo_box.move(20, 50)
         self.camera_combo_box.activated.connect(self.choose_camera)
+
+        self.btn_remove.move(125, 50)
+        self.btn_remove.resize(50, 30)
+        self.btn_remove.clicked.connect(self.remove)
 
         self.btn_detect_cameras.clicked.connect(self.detect_cameras)
         self.btn_detect_cameras.resize(100, 40)
@@ -434,6 +439,26 @@ class Window(QtWidgets.QMainWindow):
         msg.setText("Choose the window style")
         msg.setStandardButtons(QMessageBox.Apply | QMessageBox.Cancel)
         x = msg.exec()
+
+    def remove(self):
+        camera = self.HOSTS[self.active_camera]
+        num = camera[1]
+        ip = camera[0]
+        self.HOSTS.remove((ip, num))
+        self.camera_combo_box.clear()
+        for i in range(len(self.HOSTS)):
+            self.camera_combo_box.addItem("Camera " + str(i + 1))
+            ip = self.HOSTS[i][0]
+            num = i
+            self.HOSTS[i] = (ip, num)
+        self.active_camera = self.HOSTS[0][1]
+        self.get_infos()
+
+        # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
+        self.info_process.terminate()
+        self.info_process = Process(target=src.other.functions.get_info_process,
+                                    args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info_queue,))
+        self.info_process.start()
 
 
 # classe pour la fenêtre de menu pour manager les fichiers
