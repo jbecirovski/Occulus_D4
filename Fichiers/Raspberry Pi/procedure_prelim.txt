@@ -10,6 +10,10 @@ Pour le raspberry pi des caméras:
 	9- Mettre toutes les permissions sur les deux dossiers précedemment créer (chmod 777 recordings et chmod 777 preview)
 	10- Supprimer l'ancien utilisateur en faisant (sudo userdel -r pi)
 
+	(Pour permettre au Pi de se connecter au réseau du router, il faut aller ajouter le nom du réseau et son mot de passe dans le fichier wpa-supplicant)
+	11- Aller ouvrir le fichier pour pouvoir aller l'éditer (sudo nano /etc/wpa_supplicant/wpa_supplicant.conf)
+	12- Dans la section network={}, aller ajouter ssid="Protolab_2.4GHz" et psk="Occulus2.4"
+
 Pour le router (rien de bien spécial):
 	1- Se connecter dans le router (aucun mot de passe au début)
 	2- Automatic IP (DHCP)

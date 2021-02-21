@@ -11,4 +11,4 @@ Pour le router:
 		password: Occulus2.4
 
 		nom: Protolab_5GHz
-		password: Occulus5
+		password: Occulus5.0
