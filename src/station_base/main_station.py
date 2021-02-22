@@ -52,10 +52,11 @@ class Window(QtWidgets.QMainWindow):
         # création du socket de communication (BLOCKING for now)
         # TODO voir si on doit le garder en blocking si plusieurs cameras ou envoi des images
         self.skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         # TODO À voir si ça affecte les performances lors de l'envoi de gros fichiers (images)
         # bind un port pour que l'hôte utilise toujours le même port(éviter création trop ports différents)
-        self.skt.bind((self.local_ip, 60500))
+        self.skt.bind((self.local_ip, self.PORT))
 
         # déclaration des différents composants de l'interface graphique
         self.btn_quit = QtWidgets.QPushButton("Quit", self)

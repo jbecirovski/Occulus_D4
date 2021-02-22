@@ -24,9 +24,12 @@ local_ip = s.getsockname()[0]
 s.close()
 LOCAL_PORT = 60000
 
-# déclaration des infos du socket HOST
-HOST_IP = ""
-HOST_PORT = 0
+# déclaration du port pour le broadcasting
+BROADCAST_PORT = 12345
+
+# déclaration des infos du socket de la station de base
+STATION_IP = ""
+STATION_PORT = 0
 
 # déclaration de l'objet caméra pour effectuer les opérations
 camera = PiCamera()
@@ -38,32 +41,40 @@ camera.framerate = 30
 # TODO à voir si ça affecte les performances
 camera.start_preview()
 
+# création des sockets pour la communication
 # TODO Voir si on doit le garder en blocking si plusieurs cameras ou envoie des images
-skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 # binder le socket
-skt.bind((local_ip, LOCAL_PORT))
+tcp_sock.bind((local_ip, LOCAL_PORT))
+udp_sock.bind(("255.255.255.255", BROADCAST_PORT))
 
 # écoute pour les connections entrantes
-skt.listen()
+tcp_sock.listen()
 
 while True:
-    # s'il y a connexion, on l'accepte et on la traite
-    connection, address = skt.accept()
+    # on regarde si on ne reçoit pas un paquet UDP de broadcast
+    data, address = udp_sock.recvfrom(1024)
+    if data:
+        print("Message: ", data.decode("utf-8"))
+        print(address)
+        print("---------------")
+        udp_sock.sendto(local_ip.encode('utf-8'), (address[0], address[1]))
+
+    # s'il y a connexion TCP, on l'accepte et on la traite
+    connection, address = tcp_sock.accept()
     print("Connexion établie par: ", address[0], "sur le socket ", address[1])
-    HOST_IP = address[0]
-    HOST_PORT = address[1]
+    STATION_IP = address[0]
+    STATION_PORT = address[1]
     with connection:
         data = connection.recv(1024).decode('utf-8')
         data = data.split("_")
         command = data[0] + "_" + data[1]
 
-        # tous les choix possibles d'actions pour la caméra
-        if data[0] == "broadcast":
-            rep = local_ip
-            print("Sending IP!")
-
-        elif data[0] == "get":
+        if data[0] == "get":
             if command == "get_preview":
                 # on capture une image avec la caméra
                 # TODO à voir si c'est trop gros pour la lecture de l'autre côté
