@@ -3,7 +3,7 @@
 import socket
 import subprocess
 
-# from picamera import PiCamera
+from picamera import PiCamera
 from datetime import datetime
 from multiprocessing import Process
 
@@ -13,7 +13,7 @@ def read_file(input_file, send_to):
     # on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
     image = input_file.read(4096)
     while image:
-        send_to.send(read)
+        send_to.send(image)
         image = file.read(4096)
 
 
