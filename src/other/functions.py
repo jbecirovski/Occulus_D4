@@ -26,6 +26,13 @@ def close_port(skt: socket):
     skt.close()
 
 
+# fonction pour traiter les réponses du broadcast UDP
+def get_response(response_queue, ip, port, skt):
+    while True:
+        print("Traitement de la réponse")
+        time.sleep(10)
+
+
 # fonction pour faire le ping multiprocess (en)
 def sweep_network(job_queue, results_queue):
     cmd = 'ping -n 1 '

@@ -59,10 +59,11 @@ while True:
     # on regarde si on ne reçoit pas un paquet UDP de broadcast
     data, address = udp_sock.recvfrom(1024)
     if data:
-        print("Message: ", data.decode("utf-8"))
+        print("Message: ", data.decode('utf-8'))
         print(address)
         print("---------------")
-        udp_sock.sendto(local_ip.encode('utf-8'), (address[0], address[1]))
+        if data.decode('utf_8') == "requesting_broadcast":
+            udp_sock.sendto(local_ip.encode('utf-8'), (address[0], address[1]))
 
     # s'il y a connexion TCP, on l'accepte et on la traite
     connection, address = tcp_sock.accept()

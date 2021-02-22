@@ -45,6 +45,8 @@ class Window(QtWidgets.QMainWindow):
         # initialisation des variables constantes
         self.HOSTS = []
         self.PORT = 60000
+        self.BROADCAST_IP = "255.255.255.255"
+        self.BROADCAST_PORT = 12345
 
         # initialisation de la variable pour l'envoi de preview
         self.active_preview = False
@@ -54,8 +56,13 @@ class Window(QtWidgets.QMainWindow):
         self.skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
+        # création du socket UDP pour le broadcasting
+        self.udp_skt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.udp_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.udp_skt.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
         # TODO À voir si ça affecte les performances lors de l'envoi de gros fichiers (images)
-        # bind un port pour que l'hôte utilise toujours le même port(éviter création trop ports différents)
+        # bind les ports pour la communication socket
         self.skt.bind((self.local_ip, self.PORT))
 
         # déclaration des différents composants de l'interface graphique
@@ -91,15 +98,29 @@ class Window(QtWidgets.QMainWindow):
         self.info_thread = threading.Thread()
         self.preview_thread = threading.Thread()
 
+        # création du thread pour aller chercher les réponses du broadcast UDP
+        self.broadcast_thread = threading.Thread()
+
         # déclaration des queues pour la gestion des communications entre les process et threads
         self.info_queue = Queue()
         self.preview_queue = Queue()
+
+        # déclaration de la queue pour le traitement des réponses de broadcast UDP
+        self.broadcast_queue = Queue()
+
+        # starter le thread pour traiter les réponses UDP du broadcast
+        self.broadcast_thread = threading.Thread(target=src.other.functions.get_response,
+                                                 args=(self.broadcast_queue, self.BROADCAST_IP, self.BROADCAST_PORT,
+                                                       self.udp_skt),
+                                                 daemon=True).start()
 
         # détecte les caméras qui sont sur le network au start
         while len(self.HOSTS) == 0:
             self.detect_cameras()
             if len(self.HOSTS) == 0:
                 print("No camera was detected. Trying again!")
+                # TODO à enlever lors des tests réels
+                self.broadcast_queue.put("192.168.0.10")
 
         # va chercher les infos de la caméra par défaut
         self.get_infos()
@@ -211,12 +232,12 @@ class Window(QtWidgets.QMainWindow):
                                     args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info_queue,))
         self.info_process.start()
 
-        # créer le thread pour aller updater l'info de la caméra
+        # starter le thread pour aller updater l'info de la caméra
         self.info_thread = threading.Thread(target=src.other.functions.update_infos_thread,
                                             args=(self.info_queue, self.info,),
                                             daemon=True).start()
 
-        # créer le thread pour aller updater le preview
+        # starter le thread pour aller updater le preview
         self.preview_thread = threading.Thread(target=src.other.functions.update_preview_thread,
                                                args=(self.preview_queue, self.preview,),
                                                daemon=True).start()
@@ -266,8 +287,8 @@ class Window(QtWidgets.QMainWindow):
 
     # TODO À changer avec range d'adresse des caméras
     def detect_cameras(self):
-        print("Detect cameras!")
-        local_ip = self.local_ip.split('.')
+        print("Detecting cameras!")
+        """local_ip = self.local_ip.split('.')
         network = local_ip[0] + '.' + local_ip[1] + '.' + local_ip[2] + '.'
         size = 20
         num_of_threads = 20
@@ -295,7 +316,19 @@ class Window(QtWidgets.QMainWindow):
 
         while not results.empty():
             result = results.get()
-            text_results.append(result)
+            text_results.append(result)"""
+        # déclaration de la variable pour stocker les résultats
+        text_results = []
+
+        # on envoie le broadcast
+        self.udp_skt.sendto(b"requesting_broadcast", (self.BROADCAST_IP, self.BROADCAST_PORT))
+        # TODO à voir si c'est perceptible et si oui si on peut le réduire
+        time.sleep(0.5)
+
+        # on va chercher les adresses dans la queue
+        for i in range(self.broadcast_queue.qsize()):
+            item = self.broadcast_queue.get()
+            text_results.append(item)
 
         # classer les ips en ordre croissant
         text_results.sort()
