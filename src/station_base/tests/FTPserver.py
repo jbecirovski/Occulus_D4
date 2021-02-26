@@ -1,5 +1,5 @@
 # exemple de base pour un serveur FTP
-# possibilité de serveur threadé, gérer les vitesses read/write
+# possibilité de serveur threadé, gérer les vitesses read/write, contrôler les connexions
 import os
 
 from pyftpdlib.authorizers import DummyAuthorizer
