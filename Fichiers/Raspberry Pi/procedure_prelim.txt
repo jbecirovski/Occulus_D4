@@ -15,12 +15,21 @@ Pour le raspberry pi des caméras:
 	11- Aller ouvrir le fichier pour pouvoir aller l'éditer (sudo nano /etc/wpa_supplicant/wpa_supplicant.conf)
 	12- Dans la section network={}, aller ajouter ssid="Protolab_2.4GHz" et psk="Occulus2.4"
 
+Ajouter les packages à installer (pip install):
+    PyQt5
+    pyftpdlib
+    pysendfile
+    package pour I2C
+    package pour GPIO
+
 	(Pour permettre le transfert de fichiers par SSH, il faut aller l'activer, car il est désactiver par défaut)
 	13- Ce rendre dans les configurations du Pi (sudo raspi-config)
 	14- Sélectionner Interface Options
 	15- Sélectionner P2 SSH
 	15- Sélectionner Yes
 	16- Attendre que la configuration soit finie et sélectionner Finish
+
+	Ajouter enable interface I2C et probablement GPIO
 
 	(Pour transférer le fichier main de la camera dans le Pi)
 	17- Effectuer la commande suivante pour transférer un fichier vers le Pi -> scp "path_du_Pi"/main_camera.py ProtolabQuebec@"ip_du_pi":/home/ProtolabQuebec/
