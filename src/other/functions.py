@@ -5,6 +5,7 @@ import time
 import queue
 
 from PyQt5 import QtGui
+from ftplib import FTP
 
 
 def get_wifi_ip_address():
@@ -137,3 +138,9 @@ def update_preview_thread(preview_queue, preview):
             preview.setPixmap(QtGui.QPixmap(r"../ressource/preview.png"))
         except queue.Empty:
             time.sleep(1)
+
+
+def upload_file(file_path, file_name, ftp):
+    ftp.storbinary('STOR ' + file_name, open(file_path, 'rb'))
+    ftp.quit()
+

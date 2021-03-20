@@ -2,10 +2,13 @@
 
 import socket
 import subprocess
+import threading
+import src.other.functions
 
 from picamera import PiCamera
 from datetime import datetime
 from multiprocessing import Process
+from ftplib import FTP
 
 
 # définition de la fonction pour aller lire l'image dans un process externe (non-bloquant)
@@ -175,11 +178,36 @@ while True:
                 break
 
         elif data[0] == "download":
-            # TODO faire le download selon comment va marcher le serveur FTP
+            # on vient établir la connection
+            ftp = FTP('')
+            ftp.connect(STATION_IP, 2121)
+            ftp.login("user", "12345")
+            ftp.cwd("/")
             if command == "download_file":
-                print("Downloading file!")
+                fichiers = data[2]
+                fichiers = fichiers.split(',')
+
+                # on crée un thread pour chaque fichier à télécharger
+                for i in range(len(fichiers)):
+                    threading.Thread(target=src.other.functions.upload_file, args=('/recordings/' + fichiers[i],
+                                                                                   fichiers[i], ftp)).start()
+                print("Downloading file(s)!")
 
             elif command == "download_all":
+
+                # on va chercher le nombre de fichiers totaux à downloader
+                cmd = "ls /home/ProtolabQuebec/recordings/"
+                process = subprocess.Popen(cmd.split())
+                output, error = process.communicate()
+                output = output.decode()
+                print(output)
+                files = output.split(" ")
+                number = len(output)
+
+                # on crée un thread pour chaque fichier à télécharger
+                for i in range(len(files)):
+                    threading.Thread(target=src.other.functions.upload_file, args=('/recordings/' + fichiers[i],
+                                                                                   fichiers[i], ftp)).start()
                 print("Downloading all files!")
 
         else:

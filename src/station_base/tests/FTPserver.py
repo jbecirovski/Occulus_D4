@@ -13,7 +13,7 @@ handler = FTPHandler
 handler.authorizer = authorizer
 
 # on envoie un message au client lors de la connection
-handler.banner = "Helle from FTP server!"
+handler.banner = "Hello from FTP server!"
 
 server = FTPServer(("127.0.0.1", 2121), handler)
 server.serve_forever()

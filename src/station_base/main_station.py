@@ -6,13 +6,16 @@ import sys
 import threading
 import time
 import ctypes
-import queue
 from multiprocessing import Process, Queue
 
 import src.other.functions
+import os
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
 
 
 class Window(QtWidgets.QMainWindow):
@@ -39,7 +42,7 @@ class Window(QtWidgets.QMainWindow):
         else:
             self.osLanguage = 'en'
 
-        # initialisation du port de communication
+        # détermine l'adresse IP de la station de base
         self.local_ip = src.other.functions.get_wifi_ip_address()
 
         # initialisation des variables constantes
@@ -114,6 +117,19 @@ class Window(QtWidgets.QMainWindow):
                                                        self.udp_skt),
                                                  daemon=True).start()
 
+        # on vient commencé le serveur FTP
+        authorizer = DummyAuthorizer()
+        authorizer.add_user("user", "12345", os.getcwd(), perm="elradfmw")
+
+        handler = FTPHandler
+        handler.authorizer = authorizer
+
+        # on envoie un message au client lors de la connection
+        handler.banner = "Hello from FTP server!"
+
+        server = FTPServer((self.local_ip, 2121), handler)
+        server.serve_forever()
+
         # détecte les caméras qui sont sur le network au start
         while len(self.HOSTS) == 0:
             self.detect_cameras()
@@ -138,6 +154,7 @@ class Window(QtWidgets.QMainWindow):
         self.btn_remove.resize(50, 30)
         self.btn_remove.clicked.connect(self.remove)
 
+        # noinspection PyTypeChecker
         self.btn_detect_cameras.clicked.connect(self.detect_cameras)
         self.btn_detect_cameras.resize(100, 40)
         self.btn_detect_cameras.move(20, 100)
@@ -495,7 +512,7 @@ class Window(QtWidgets.QMainWindow):
         self.info_process.start()
 
 
-# classe pour la fenêtre de menu pour manager les fichiers
+# classe pour la fenêtre de menu pour gérer les fichiers
 class FileWindow(QtWidgets.QWidget):
 
     # constructeur de la classe
