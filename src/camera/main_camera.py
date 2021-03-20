@@ -1,12 +1,17 @@
-# script pour le fonctionnement des caméras
+#  Script pour le fonctionnement général des caméras
+#  main_camera.py
+#  Définition des différentes fonction selon les commandes reçues par TCP
+
+#  ProtolabQuebec 2021
+#  Par: Vincent Marois-Boucher
 
 import socket
 import subprocess
 import threading
 import src.other.functions
+import src.battery_status.i2c_master_pi
 
 from picamera import PiCamera
-from datetime import datetime
 from multiprocessing import Process
 from ftplib import FTP
 
@@ -38,6 +43,9 @@ STATION_PORT = 0
 camera = PiCamera()
 camera.resolution = (1920, 1080)
 camera.framerate = 30
+
+# on vient créer l'objet pour faire la communication I2C pour la charge de la batterie
+bmscom = BMSCom()
 
 # on met la camera en preview pour la préparer et on la garde afin de s'assurer qu'elle soit prête à prendre une photo
 # à n'importe quel moment
@@ -111,7 +119,7 @@ while True:
                 print("Getting preview!")
 
             elif command == "get_infos":
-                # TODO faire la fonction pour aller get la charge de la batterie
+                # battery = bmscom.get_charge1000()
                 battery = "50%"
                 rep = local_ip + "," + battery
                 print("Getting infos!")
