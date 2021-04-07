@@ -13,16 +13,26 @@ Pour le raspberry pi des caméras:
 
 	(Pour permettre au Pi de se connecter au réseau du router, il faut aller ajouter le nom du réseau et son mot de passe dans le fichier wpa-supplicant)
 	11- Aller ouvrir le fichier pour pouvoir aller l'éditer (sudo nano /etc/wpa_supplicant/wpa_supplicant.conf)
-	12- Dans la section network={}, aller ajouter ssid="Protolab_2.4GHz" et psk="Occulus2.4"
+	12- Ajouter une section network={} et dans celle-ci aller ajouter ssid="Protolab_2.4GHz" et psk="Occulus2.4"
 
-Ajouter les packages à installer (sudo apt install python3-pip):
-    PyQt5
-    pyftpdlib
-    pysendfile
-    smbus2 pour I2C
-    package pour GPIO
+	Ajouter les packages à installer (sudo apt install python3-pip, connexion Internet requise):
+        pysendfile (pip3 install pysendfile)
+        smbus2 pour I2C
+        package pour GPIO (à revoir, n'a pas fonctionné pour Vincent)
 
-	(Pour permettre le transfert de fichiers par SSH, il faut aller l'activer, car il est désactiver par défaut)
+	(Si vous devez utiliser l'adapteur Wi-Fi, voici comment faire pour le configurer pour que le Raspberry Pi puisse l'utiliser)
+	- installer le package pour pouvoir builder le drive (sudo apt-get install build-essential) sur la carte SD, connexion Internet requise
+	- Copier le fichier du driver Linux pour l'adapteur sur la carte Micro-SD (scp -r path\EW-7811Un_V2_Linux_Driver_1.0.0.3\ ProtlabQuebec@IP:/home/ProtolabQuebec)
+	- Brancher l'adapteur dans la carte mère et alimenter le pi
+	- Après le boot, en faisant la commande dmesg | more et en cliquant sur la barre espace plusieurs fois, vous trouverez la ligne usb 1-1.1 (1-1.2): Product: Edimax M150 Adapter. Cela signifie que le Raspberry Pi le détecte bien.
+	- Aller dans le dossier avec la commande cd (cd EW-7811Un_V2_Linux_Driver_1.0.0.3)
+	- Décompresser le fichier en faisant la commande gunzip (gunzip -d rtl8188EUS_linux_v5.3.9_28540.20180627.tar.gz)
+	- Décompresser le fichier en faisant la commande tar (tar -xvf rtl8188EUS_linux_v5.3.9_28540.20180627.tar)
+	- Aller dans le dossier en faisant la commande cd (cd rtl8188EUS_linux_v5.3.9_28540.20180627)
+	- Builder le driver en exécutant la commande sudo make
+	(Ça ne marche pas, mais je laisse ça içi au cas où)
+
+	(Pour permettre le contrôle à distance, il faut aller l'activer, car il est désactiver par défaut)
 	13- Ce rendre dans les configurations du Pi (sudo raspi-config)
 	14- Sélectionner Interface Options
 	15- Sélectionner P2 SSH
@@ -38,12 +48,14 @@ Ajouter les packages à installer (sudo apt install python3-pip):
 
 
 	(Pour transférer le fichier main de la camera dans le Pi)
-	20- Effectuer la commande suivante pour transférer un fichier vers le Pi -> scp "path_du_Pi"/main_camera.py ProtolabQuebec@"ip_du_pi":/home/ProtolabQuebec/
+	20- Effectuer la commande suivante pour transférer un fichier vers le Pi -> scp "path_du_fichier"/main_camera.py ProtolabQuebec@"ip_du_pi":/home/ProtolabQuebec/
 
 	(Pour activer l'alimentation des port USB, il faut aller l'activer, car il est désactiver par défaut)
-	21- Aller dans le fichier /boot/config.txt
-	22- Écrire dans le fichier: dtoverlay=dwc2,dr_mode=host
+	21- Aller dans le fichier pour écrire(sudo nano /boot/config.txt)
+	22- Ajouter dans le fichier: dtoverlay=dwc2,dr_mode=host
 	23- Faire un reboot du Pi
+
+	# TODO rajouter le fait de faire runner le script au boot
 
 Pour le router (rien de bien spécial):
 	1- Se connecter dans le router (aucun mot de passe au début)
