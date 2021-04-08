@@ -113,11 +113,11 @@ class Window(QtWidgets.QMainWindow):
 
         # starter le thread pour traiter les réponses UDP du broadcast
         self.broadcast_thread = threading.Thread(target=src.other.functions.get_response,
-                                                 args=(self.broadcast_queue, self.BROADCAST_IP, self.BROADCAST_PORT,
-                                                       self.udp_skt),
+                                                 args=(self.broadcast_queue, self.udp_skt),
                                                  daemon=True).start()
 
-        # on vient commencé le serveur FTP
+        # TODO venir changer la façon dont on vient runner le serveur FTP
+        """# on vient commencé le serveur FTP
         authorizer = DummyAuthorizer()
         authorizer.add_user("user", "12345", os.getcwd(), perm="elradfmw")
 
@@ -128,7 +128,7 @@ class Window(QtWidgets.QMainWindow):
         handler.banner = "Hello from FTP server!"
 
         server = FTPServer((self.local_ip, 2121), handler)
-        server.serve_forever()
+        server.serve_forever()"""
 
         # détecte les caméras qui sont sur le network au start
         while len(self.HOSTS) == 0:
@@ -303,6 +303,7 @@ class Window(QtWidgets.QMainWindow):
             pass
 
     # TODO À changer avec range d'adresse des caméras
+    # TODO À revoir pour changement avec broadcast sur recall de la fonction
     def detect_cameras(self):
         print("Detecting cameras!")
         """local_ip = self.local_ip.split('.')

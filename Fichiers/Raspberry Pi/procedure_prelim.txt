@@ -14,46 +14,53 @@ Pour le raspberry pi des caméras:
 	(Pour permettre au Pi de se connecter au réseau du router, il faut aller ajouter le nom du réseau et son mot de passe dans le fichier wpa-supplicant)
 	11- Aller ouvrir le fichier pour pouvoir aller l'éditer (sudo nano /etc/wpa_supplicant/wpa_supplicant.conf)
 	12- Ajouter une section network={} et dans celle-ci aller ajouter ssid="Protolab_2.4GHz" et psk="Occulus2.4"
+	13- Il faut par la suite aller définir le pays dans lequel on opère, donc on fait sudo raspi-config -> Localisation Options -> L4 WLAN Country -> CA canada)
+	14- Attendre que la configuration soit terminée et cliquer sur Finish
+	15- Reboot
 
-	Ajouter les packages à installer (sudo apt install python3-pip, connexion Internet requise):
-        pysendfile (pip3 install pysendfile)
-        smbus2 pour I2C
+	Ajouter les packages à installer (sudo apt install python3-pip, connexion Internet requise et ensuite faire sudo apt-get update pour être sûr):
+	    PyQt5 (sudo apt-get install qt5-default pyqt5-dev pyqt5-dev-tools)
+	    picamera (sudo apt-get install python3-pip, sudo pip3 install picamera)
+        pysendfile (sudo pip3 install pysendfile)
+        smbus2 pour I2C (sudo pip3 install smbus2)
         package pour GPIO (à revoir, n'a pas fonctionné pour Vincent)
 
-	(Si vous devez utiliser l'adapteur Wi-Fi, voici comment faire pour le configurer pour que le Raspberry Pi puisse l'utiliser)
-	- installer le package pour pouvoir builder le drive (sudo apt-get install build-essential) sur la carte SD, connexion Internet requise
-	- Copier le fichier du driver Linux pour l'adapteur sur la carte Micro-SD (scp -r path\EW-7811Un_V2_Linux_Driver_1.0.0.3\ ProtlabQuebec@IP:/home/ProtolabQuebec)
-	- Brancher l'adapteur dans la carte mère et alimenter le pi
-	- Après le boot, en faisant la commande dmesg | more et en cliquant sur la barre espace plusieurs fois, vous trouverez la ligne usb 1-1.1 (1-1.2): Product: Edimax M150 Adapter. Cela signifie que le Raspberry Pi le détecte bien.
-	- Aller dans le dossier avec la commande cd (cd EW-7811Un_V2_Linux_Driver_1.0.0.3)
-	- Décompresser le fichier en faisant la commande gunzip (gunzip -d rtl8188EUS_linux_v5.3.9_28540.20180627.tar.gz)
-	- Décompresser le fichier en faisant la commande tar (tar -xvf rtl8188EUS_linux_v5.3.9_28540.20180627.tar)
-	- Aller dans le dossier en faisant la commande cd (cd rtl8188EUS_linux_v5.3.9_28540.20180627)
-	- Builder le driver en exécutant la commande sudo make
-	(Ça ne marche pas, mais je laisse ça içi au cas où)
-
 	(Pour permettre le contrôle à distance, il faut aller l'activer, car il est désactiver par défaut)
-	13- Ce rendre dans les configurations du Pi (sudo raspi-config)
-	14- Sélectionner Interface Options
-	15- Sélectionner P2 SSH
-	15- Sélectionner Yes
-	16- Attendre que la configuration soit finie et sélectionner Finish
+	16- Ce rendre dans les configurations du Pi (sudo raspi-config)
+	17- Sélectionner Interface Options
+	18- Sélectionner P2 SSH
+	19- Sélectionner Yes
+	20- Attendre que la configuration soit finie et sélectionner Finish
 
 	(Pour permettre la communication I2C, il faut aller l'activer, car il est désactiver par défaut)
-	15- Ce rendre dans les configurations du Pi (sudo raspi-config)
-	16- Sélectionner Interface Options
-	17- Sélectionner P5 I2C
-	18- Sélectionner Yes
-	19- Attendre que la configuration soit finie et sélectionner Finish
+	21- Ce rendre dans les configurations du Pi (sudo raspi-config)
+	22- Sélectionner Interface Options
+	23- Sélectionner P5 I2C
+	24- Sélectionner Yes
+	25- Attendre que la configuration soit finie et sélectionner Finish
 
 
 	(Pour transférer le fichier main de la camera dans le Pi)
-	20- Effectuer la commande suivante pour transférer un fichier vers le Pi -> scp "path_du_fichier"/main_camera.py ProtolabQuebec@"ip_du_pi":/home/ProtolabQuebec/
+	26- Effectuer la commande suivante pour transférer les fichiers vers le Pi -> scp "path_du_fichier"/main_camera.py ProtolabQuebec@"ip_du_pi":/home/ProtolabQuebec/, scp "path_du_fichier"/functions.py ProtolabQuebec@"ip_du_pi":/home/ProtolabQuebec/
 
 	(Pour activer l'alimentation des port USB, il faut aller l'activer, car il est désactiver par défaut)
-	21- Aller dans le fichier pour écrire(sudo nano /boot/config.txt)
-	22- Ajouter dans le fichier: dtoverlay=dwc2,dr_mode=host
-	23- Faire un reboot du Pi
+	27- Aller dans le fichier pour écrire(sudo nano /boot/config.txt)
+	28- Ajouter dans le fichier: dtoverlay=dwc2,dr_mode=host
+	29- Faire un reboot du Pi
+
+	(Pour pouvoir que la caméra fonctionne?)
+	30- Ce rendre dans les configurations du Pi (sudo raspi-config)
+	31- Sélectionner Interface Options
+	32- Sélectionner P1 Camera
+	33- Sélectionner Yes
+	34- Attendre que la configuration soit finie et sélectionner Finish
+	35- Updater et upgrader le système (sudo apt update, sudo apt full-upgrade)
+    36- Reboot
+    37- Faire la commande sudo wget https://www.raspberrypi.org/documentation/hardware/computemodule/dt-blob-cam1.dts -o /boot/dt-blob-cam1.dts
+    38- Aller dans le dossier boot (cd /boot)
+    39- Faire la commande sudo dtc -I dts -O dtb -o /boot/dt-blob-cam1.bin dt-blob-cam1.dts (si la commande ne fonctionne pas, faire sudo apt install device-tree-compiler)
+    40- Reboot
+    41- Vérifier si la caméra fonctionnne bien en faisant raspistill -o text.jpg
 
 	# TODO rajouter le fait de faire runner le script au boot
 

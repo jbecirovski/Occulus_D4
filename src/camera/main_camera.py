@@ -3,7 +3,7 @@
 import socket
 import subprocess
 import threading
-import src.other.functions
+import functions
 
 from picamera import PiCamera
 from datetime import datetime
@@ -67,6 +67,8 @@ while True:
         print("---------------")
         if data.decode('utf_8') == "requesting_broadcast":
             udp_sock.sendto(local_ip.encode('utf-8'), (address[0], address[1]))
+            print(f"Sending back data {address[0]},{address[1]}")
+            print("---------------")
 
     # s'il y a connexion TCP, on l'accepte et on la traite
     connection, address = tcp_sock.accept()
@@ -99,15 +101,11 @@ while True:
                 read = file.read(4096)
                 while read:
                     connection.send(read)
-                    read = file.read(4096)"""
+                    read = file.read(4096)
 
                 # on vient fermer le fichier pour éviter des problèmes
-                file.close()
+                file.close()"""
 
-                # on vient le supprimer pour pouvoir réécrire un fichier avec le même nom (call système)
-                cmd = "rm /home/ProtolabQuebec/preview/preview.jpg"
-                process = subprocess.Popen(cmd.split())
-                process.communicate()
                 print("Getting preview!")
 
             elif command == "get_infos":
@@ -124,19 +122,17 @@ while True:
         elif data[0] == "start":
 
             # on va chercher le nombre de fichier dans le dossier recordings pour identifier le nouvel enregistrement
-            # TODO à voir si ça marche
             cmd = "ls /home/ProtolabQuebec/recordings/"
-            process = subprocess.Popen(cmd.split())
-            output, error = process.communicate()
-            output = output.decode()
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            output = process.stdout.read()
             print(output)
-            files = output.split(" ")
-            number = len(output) + 1
+            output = output.decode()
+            files = output.split("\n")
+            number = len(files)
             camera.start_recording("/home/ProtolabQuebec/recordings/" + str(number) + ".h264")
             print("Starting camera!")
 
         elif data[0] == "stop":
-            # TODO à voir si ça soulève des erreurs de faire comme ça
             camera.stop_recording()
             print("Stopping camera!")
 
@@ -164,14 +160,16 @@ while True:
                 fichiers = fichiers.split(',')
                 for i in range(len(fichiers)):
                     cmd = "rm /home/ProtolabQuebec/recordings/" + str(fichiers[i])
-                    process = subprocess.Popen(cmd.split())
-                    output, error = process.communicate()
+                    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+                    output = process.stdout.read()
+                    print(output)
                 print("Deleting file(s)!")
 
             elif command == "delete_all":
                 cmd = "rm /home/ProtolabQuebec/recordings/*"
-                process = subprocess.Popen(cmd.split())
-                output, error = process.communicate()
+                process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+                output = process.stdout.read()
+                print(output)
                 print("Deleting all files!")
 
             else:
@@ -189,8 +187,8 @@ while True:
 
                 # on crée un thread pour chaque fichier à télécharger
                 for i in range(len(fichiers)):
-                    threading.Thread(target=src.other.functions.upload_file, args=('/recordings/' + fichiers[i],
-                                                                                   fichiers[i], ftp)).start()
+                    threading.Thread(target=functions.upload_file, args=('/recordings/' + fichiers[i],
+                                                                         fichiers[i], ftp)).start()
                 print("Downloading file(s)!")
 
             elif command == "download_all":
@@ -206,22 +204,24 @@ while True:
 
                 # on crée un thread pour chaque fichier à télécharger
                 for i in range(len(files)):
-                    threading.Thread(target=src.other.functions.upload_file, args=('/recordings/' + fichiers[i],
-                                                                                   fichiers[i], ftp)).start()
+                    threading.Thread(target=functions.upload_file, args=('/recordings/' + fichiers[i],
+                                                                         fichiers[i], ftp)).start()
                 print("Downloading all files!")
 
         else:
             if command == "check_files":
-                # TODO à voir si ça marche
                 cmd = "ls /home/ProtolabQuebec/recordings/"
-                process = subprocess.Popen(cmd.split())
-                output, error = process.communicate()
+                process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+                output = process.stdout.read()
                 output = output.decode()
                 print(output)
                 files = output.split(" ")
                 names = ""
                 for i in range(len(files)):
-                    names = names + "," + files[0]
+                    if i == 0:
+                        names = names + files[0]
+                    else:
+                        names = names + "," + files[i]
                 print("Checking files!")
                 rep = names
 
@@ -230,14 +230,17 @@ while True:
 
             elif command == "refresh_files":
                 cmd = "ls /home/ProtolabQuebec/recordings/"
-                process = subprocess.Popen(cmd.split())
-                output, error = process.communicate()
+                process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+                output = process.stdout.read()
                 output = output.decode()
                 print(output)
                 files = output.split(" ")
                 names = ""
                 for i in range(len(files)):
-                    names = names + "," + files[0]
+                    if i == 0:
+                        names = names + files[0]
+                    else:
+                        names = names + "," + files[i]
                 print("Refreshing files!")
                 rep = names
 

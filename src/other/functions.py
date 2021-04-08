@@ -5,7 +5,6 @@ import time
 import queue
 
 from PyQt5 import QtGui
-from ftplib import FTP
 
 
 def get_wifi_ip_address():
@@ -28,10 +27,12 @@ def close_port(skt: socket):
 
 
 # fonction pour traiter les réponses du broadcast UDP
-def get_response(response_queue, ip, port, skt):
+def get_response(broadcast_queue, skt):
     while True:
-        print("Traitement de la réponse")
-        time.sleep(10)
+        data, address = skt.recv(1024)
+        if data:
+            data = data.decode('utf-8')
+            broadcast_queue.put(data)
 
 
 # fonction pour faire le ping multiprocess (en)
