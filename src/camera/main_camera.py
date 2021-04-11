@@ -67,7 +67,7 @@ while True:
         print("---------------")
         if data.decode('utf_8') == "requesting_broadcast":
             udp_sock.sendto(local_ip.encode('utf-8'), (address[0], address[1]))
-            print(f"Sending back data {address[0]},{address[1]}")
+            print(f"Sending back data to {address[0]}, {address[1]}")
             print("---------------")
 
     # s'il y a connexion TCP, on l'accepte et on la traite

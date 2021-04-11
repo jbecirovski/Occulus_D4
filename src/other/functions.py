@@ -28,8 +28,9 @@ def close_port(skt: socket):
 
 # fonction pour traiter les réponses du broadcast UDP
 def get_response(broadcast_queue, skt):
+    skt.sendto(b"enabling socket", ("255.255.255.255", 12345))
     while True:
-        data, address = skt.recv(1024)
+        data, address = skt.recvfrom(1024)
         if data:
             data = data.decode('utf-8')
             broadcast_queue.put(data)

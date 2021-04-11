@@ -111,11 +111,6 @@ class Window(QtWidgets.QMainWindow):
         # déclaration de la queue pour le traitement des réponses de broadcast UDP
         self.broadcast_queue = Queue()
 
-        # starter le thread pour traiter les réponses UDP du broadcast
-        self.broadcast_thread = threading.Thread(target=src.other.functions.get_response,
-                                                 args=(self.broadcast_queue, self.udp_skt),
-                                                 daemon=True).start()
-
         # TODO venir changer la façon dont on vient runner le serveur FTP
         """# on vient commencé le serveur FTP
         authorizer = DummyAuthorizer()
@@ -129,17 +124,6 @@ class Window(QtWidgets.QMainWindow):
 
         server = FTPServer((self.local_ip, 2121), handler)
         server.serve_forever()"""
-
-        # détecte les caméras qui sont sur le network au start
-        while len(self.HOSTS) == 0:
-            self.detect_cameras()
-            if len(self.HOSTS) == 0:
-                print("No camera was detected. Trying again!")
-                # TODO à enlever lors des tests réels
-                self.broadcast_queue.put("192.168.0.10")
-
-        # va chercher les infos de la caméra par défaut
-        self.get_infos()
 
     # création de l'interface
     def create_ui(self):
@@ -244,6 +228,22 @@ class Window(QtWidgets.QMainWindow):
         self.palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.darkRed)
         QtWidgets.qApp.setPalette(self.palette)
 
+        # starter le thread pour traiter les réponses UDP du broadcast
+        self.broadcast_thread = threading.Thread(target=src.other.functions.get_response,
+                                                 args=(self.broadcast_queue, self.udp_skt,),
+                                                 daemon=True).start()
+
+        # détecte les caméras qui sont sur le network au start
+        while len(self.HOSTS) == 0:
+            self.detect_cameras()
+            if len(self.HOSTS) == 0:
+                print("No camera was detected. Trying again!")
+                # TODO à enlever lors des tests réels
+                # self.broadcast_queue.put("192.168.0.10")
+
+        # va chercher les infos de la caméra par défaut
+        self.get_infos()
+
         # créer le process pour aller chercher les infos de la caméra
         self.info_process = Process(target=src.other.functions.get_info_process,
                                     args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info_queue,))
@@ -340,8 +340,6 @@ class Window(QtWidgets.QMainWindow):
 
         # on envoie le broadcast
         self.udp_skt.sendto(b"requesting_broadcast", (self.BROADCAST_IP, self.BROADCAST_PORT))
-        # TODO à voir si c'est perceptible et si oui si on peut le réduire
-        time.sleep(0.5)
 
         # on va chercher les adresses dans la queue
         for i in range(self.broadcast_queue.qsize()):

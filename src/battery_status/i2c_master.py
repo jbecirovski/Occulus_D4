@@ -1,5 +1,5 @@
 #  Raspberry Pi Master for battery status manager Slave
-#  i2c_master_pi.py
+#  i2c_master.py
 #  Connects to battery status manager via I2C
 #  useful for battery fuel gauge LC709203F
 
