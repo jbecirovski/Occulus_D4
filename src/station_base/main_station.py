@@ -408,24 +408,25 @@ class Window(QtWidgets.QMainWindow):
         x = msg.exec()
 
     def remove(self):
-        camera = self.HOSTS[self.active_camera]
-        num = camera[1]
-        ip = camera[0]
-        self.HOSTS.remove((ip, num))
-        self.camera_combo_box.clear()
-        for i in range(len(self.HOSTS)):
-            self.camera_combo_box.addItem("Camera " + str(i + 1))
-            ip = self.HOSTS[i][0]
-            num = i
-            self.HOSTS[i] = (ip, num)
-        self.active_camera = self.HOSTS[0][1]
-        self.get_infos()
+        if len(self.HOSTS) > 1:
+            camera = self.HOSTS[self.active_camera]
+            num = camera[1]
+            ip = camera[0]
+            self.HOSTS.remove((ip, num))
+            self.camera_combo_box.clear()
+            for i in range(len(self.HOSTS)):
+                self.camera_combo_box.addItem("Camera " + str(i + 1))
+                ip = self.HOSTS[i][0]
+                num = i
+                self.HOSTS[i] = (ip, num)
+            self.active_camera = self.HOSTS[0][1]
+            self.get_infos()
 
-        # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
-        self.info_process.terminate()
-        self.info_process = Process(target=src.other.functions.get_info_process,
-                                    args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info_queue,))
-        self.info_process.start()
+            # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
+            self.info_process.terminate()
+            self.info_process = Process(target=src.other.functions.get_info_process,
+                                        args=(self.skt, self.HOSTS[self.active_camera], self.PORT, self.info_queue,))
+            self.info_process.start()
 
 
 # classe pour la fenêtre de menu pour gérer les fichiers
