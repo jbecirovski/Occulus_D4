@@ -6,9 +6,10 @@ import threading
 import time
 
 import functions
+# TODO à decomment les trucs pour la lecture de la batterie
+# import i2c_master
 
 from picamera import PiCamera
-from datetime import datetime
 from multiprocessing import Process
 from ftplib import FTP
 
@@ -17,10 +18,13 @@ from ftplib import FTP
 def get_preview(cam, send_to):
     while True:
         # on prend l'image
-        cam.capture("/home/ProtolabQuebec/preview/preview.jpg")
+        # cam.capture("/home/ProtolabQuebec/preview/preview.jpg")
+        cam.capture("/home/pi/preview/preview.jpg")
 
         # on va ouvrir l'image à envoyer
-        input_file = open("/home/ProtolabQuebec/preview/preview.jpg", "wb")
+        # TODO à revérifier si c'est correct
+        # input_file = open("/home/ProtolabQuebec/preview/preview.jpg", "rb")
+        input_file = open("/home/pi/preview/preview.jpg", "rb")
 
         # on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
         image = input_file.read(65536)
@@ -46,6 +50,8 @@ STATION_PORT = 0
 camera = PiCamera()
 camera.resolution = (1920, 1080)
 camera.framerate = 30
+
+# battery_manager = i2c_master.BMSCom()
 
 # on met la camera en preview pour la préparer et on la garde afin de s'assurer qu'elle soit prête à prendre une photo
 # à n'importe quel moment
@@ -78,6 +84,7 @@ while True:
             if not data:
                 break
             data = data.split("_")
+            print(data[0])
             command = data[0] + "_" + data[1]
 
             if data[0] == "get":
@@ -97,7 +104,7 @@ while True:
                     print("Getting preview!")
 
                 elif command == "get_infos":
-                    # TODO faire la fonction pour aller get la charge de la batterie
+                    # battery = str(battery_manager.get_charge1000())
                     battery = "50%"
                     rep = local_ip + "," + battery
                     print("Getting infos!")
@@ -125,18 +132,26 @@ while True:
                 camera.stop_recording()
                 print("Stopping camera!")
 
+            # référence de 45 degrés
             elif data[0] == "move":
-                # TODO faire fonction pour aller bouger la camera
                 if command == "move_up":
+                    cmd = "python3 servomotor_master.py 33 45"
+                    subprocess.Popen(cmd)
                     print("Moving up!")
 
                 elif command == "move_right":
+                    cmd = "python3 servomotor_master.py 32 45"
+                    subprocess.Popen(cmd)
                     print("Moving right!")
 
                 elif command == "move_left":
+                    cmd = "python3 servomotor_master.py 33 45"
+                    subprocess.Popen(cmd)
                     print("Moving left!")
 
                 elif command == "move_down":
+                    cmd = "python3 servomotor_master.py 33 45"
+                    subprocess.Popen(cmd)
                     print("Moving down!")
 
                 else:
@@ -147,15 +162,17 @@ while True:
                     # on va chercher les différents fichiers à supprimer
                     fichiers = data[2]
                     fichiers = fichiers.split(',')
-                    for i in range(len(fichiers)):
-                        cmd = "rm /home/ProtolabQuebec/recordings/" + str(fichiers[i])
+                    for i in range(len(fichiers) - 1):
+                        # cmd = "rm /home/ProtolabQuebec/recordings/" + str(fichiers[i])
+                        cmd = "rm /home/pi/recordings/" + str(fichiers[i])
                         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                         output = process.stdout.read()
                         print(output)
                     print("Deleting file(s)!")
 
                 elif command == "delete_all":
-                    cmd = "rm /home/ProtolabQuebec/recordings/*"
+                    # cmd = "rm /home/ProtolabQuebec/recordings/*"
+                    cmd = "rm /home/pi/recordings/*"
                     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                     output = process.stdout.read()
                     print(output)
@@ -172,18 +189,21 @@ while True:
                 ftp.cwd("/")
                 if command == "download_file":
                     fichiers = data[2]
+                    print(fichiers)
                     fichiers = fichiers.split(',')
 
                     # on crée un thread pour chaque fichier à télécharger
-                    for i in range(len(fichiers)):
-                        threading.Thread(target=functions.upload_file, args=('/recordings/' + fichiers[i],
+                    for i in range(len(fichiers) - 1):
+                        # TODO à vérifier si ça marche
+                        threading.Thread(target=functions.upload_file, args=('/home/pi/recordings/' + fichiers[i],
                                                                              fichiers[i], ftp)).start()
                     print("Downloading file(s)!")
 
                 elif command == "download_all":
 
                     # on va chercher le nombre de fichiers totaux à downloader
-                    cmd = "ls /home/ProtolabQuebec/recordings/"
+                    # cmd = "ls /home/ProtolabQuebec/recordings/"
+                    cmd = "ls /home/pi/recordings/"
                     process = subprocess.Popen(cmd.split())
                     output, error = process.communicate()
                     output = output.decode()
@@ -193,13 +213,15 @@ while True:
 
                     # on crée un thread pour chaque fichier à télécharger
                     for i in range(len(files)):
-                        threading.Thread(target=functions.upload_file, args=('/recordings/' + fichiers[i],
+                        # TODO à voir si ça marche
+                        threading.Thread(target=functions.upload_file, args=('/home/pi/recordings/' + fichiers[i],
                                                                              fichiers[i], ftp)).start()
                     print("Downloading all files!")
 
             else:
-                if command == "check_files":
-                    cmd = "ls /home/ProtolabQuebec/recordings/"
+                """if command == "check_files":
+                    # cmd = "ls /home/ProtolabQuebec/recordings/"
+                    cmd = "ls /home/pi/recordings/"
                     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                     output = process.stdout.read()
                     output = output.decode()
@@ -215,10 +237,12 @@ while True:
                     rep = names
 
                     # on envoie la réponse à la station de base
-                    connection.send(rep.encode('utf-8'))
+                    connection.send(rep.encode('utf-8'))"""
 
-                elif command == "refresh_files":
-                    cmd = "ls /home/ProtolabQuebec/recordings/"
+                # elif command == "refresh_files
+                if command == "refresh_files":
+                    # cmd = "ls /home/ProtolabQuebec/recordings/"
+                    cmd = "ls /home/pi/recordings/"
                     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                     output = process.stdout.read()
                     output = output.decode()
@@ -232,6 +256,8 @@ while True:
                             names = names + "," + files[i]
                     print("Refreshing files!")
                     rep = names
+                    if rep == "":
+                        rep = "none"
 
                     # on envoie la réponse à la station de base
                     connection.send(rep.encode('utf-8'))

@@ -345,8 +345,8 @@ class Window(QtWidgets.QMainWindow):
         print("Stop cameras!")
 
     def manage_files(self):
-        print("Managing files")
-        self.fileWindow = FileWindow(self.active_camera, self.skt, self.HOSTS[self.active_camera], self.PORT)
+        print("Managing files!")
+        self.fileWindow = FileWindow(self.active_camera, self.tcp_skt, self.HOSTS[self.active_camera], self.PORT)
         if self.fileWindow.isVisible():
             self.fileWindow.hide()
         else:
@@ -356,6 +356,7 @@ class Window(QtWidgets.QMainWindow):
         choice = QtWidgets.QMessageBox.question(self, "Extract!", "Are you sure you want to quit",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
+            self.tcp_skt.send(b'')
             src.other.functions.close_port(self.tcp_skt)
             self.info_process.terminate()
             self.info_process.join()
@@ -394,12 +395,14 @@ class Window(QtWidgets.QMainWindow):
         self.tcp_skt.send(b"get_infos")
         data = self.tcp_skt.recv(1024)
         data = data.decode('utf-8')
+        data = data.split(',')
+        percent = data[1]
         print("getting infos from camera: " + str(self.active_camera + 1) + "!")
         # update le label d'infos
         cam = self.HOSTS[self.active_camera]
         self.info.setText(" Informations\n Nom de la camera: Camera " + str(cam[1] + 1) +
                           "\n Adresse IP: " + str(cam[0]) +
-                          "\n Batterie restante: " + str(data))
+                          "\n Batterie restante: " + percent)
 
     def style_pop_up(self):
         msg = QMessageBox()
@@ -464,24 +467,19 @@ class FileWindow(QtWidgets.QWidget):
         self.selected_file_label = QtWidgets.QLabel(self)
 
         # on va regarder les fichiers de la caméra
-        files = self.check_files()
-        for i in range(len(files)):
-            self.button_list.append(QtWidgets.QPushButton(files[i], self))
-            self.button_list[i].setObjectName(files[i])
-            self.button_list[i].move(30, 20 * (i + 2))
-            self.button_list[i].resize(960, 20)
-            self.button_list[i].released.connect(self.select_file)
+        # files = self.refresh()
+        self.refresh()
 
         self.create_ui()
 
     # création de l'interface
     def create_ui(self):
-        self.selected_file_label.move(300, 20)
+        self.selected_file_label.move(40, 20)
         self.selected_file_label.resize(700, 20)
         self.selected_file_label.setText("Selected file(s): ")
 
         self.file_label.move(10, 20)
-        self.file_label.resize(40, 20)
+        self.file_label.resize(70, 20)
         self.file_label.setText("Files: ")
 
         self.refresh_button.resize(120, 60)
@@ -510,14 +508,8 @@ class FileWindow(QtWidgets.QWidget):
 
         self.path.resize(600, 20)
         self.path.move(10, 0)
-        self.path.setText("Directory in camera " + str(self.camera + 1) + ": ")
-
-    def check_files(self):
-        self.skt.send(b"check_files")
-        data = self.skt.recv(1024)
-        data = data.decode('utf-8')
-        data = data.split(',')
-        return data
+        # TODO à changer
+        self.path.setText("Directory in camera " + str(self.camera + 1) + ": /home/pi/recordings/")
 
     def select_file(self):
         clicked_button = self.sender()
@@ -545,16 +537,16 @@ class FileWindow(QtWidgets.QWidget):
         self.skt.send(b"refresh_files")
         data = self.skt.recv(1024)
         data = data.decode('utf-8')
-        self.fill_files(data)
         print("Refreshing file menu window!")
-        data = data.split(",")
-        for i in range(len(data)):
-            self.button_list.append(QtWidgets.QPushButton(data[i], self))
-            self.button_list[i].setObjectName(data[i])
-            self.button_list[i].move(30, 20 * (i + 2))
-            self.button_list[i].resize(960, 20)
-            self.button_list[i].released.connect(self.select_file)
-            self.button_list[i].show()
+        if data != "none":
+            data = data.split("\n")
+            for i in range(len(data) - 1):  # -1 pour éviter le dernier string vide de split
+                self.button_list.append(QtWidgets.QPushButton(data[i], self))
+                self.button_list[i].setObjectName(data[i])
+                self.button_list[i].move(30, 20 * (i + 2))
+                self.button_list[i].resize(960, 20)
+                self.button_list[i].released.connect(self.select_file)
+                self.button_list[i].show()
         self.selected_files = []
         self.selected_file_label.setText("Selected file: ")
 
@@ -570,7 +562,7 @@ class FileWindow(QtWidgets.QWidget):
             files = ""
             for i in range(len(self.selected_files)):
                 files = files + self.selected_files[i] + ","
-            self.skt.send(b"download_file," + files)
+            self.skt.send(b"download_file_" + files.encode('utf-8'))
             print("Downloading selected file to computer!")
 
     # TODO à voir si ça marche
@@ -597,8 +589,8 @@ class FileWindow(QtWidgets.QWidget):
             files = ""
             for i in range(len(self.selected_files)):
                 files = files + self.selected_files[i] + ","
-            self.skt.send(b"delete_file_" + files)
-            print("Deleting selected file from camera!")
+            self.skt.send(b"delete_file_" + files.encode('utf-8'))
+            print("Deleting selected file(s) from camera!")
             self.refresh()
 
     # TODO à voir comment faire la gestion de toutes les caméras

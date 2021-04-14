@@ -41,7 +41,10 @@ Pour le raspberry pi des caméras:
 
 
 	(Pour transférer le fichier main de la camera dans le Pi)
-	26- Effectuer la commande suivante pour transférer les fichiers vers le Pi -> scp "path_du_fichier"/main_camera.py ProtolabQuebec@"ip_du_pi":/home/ProtolabQuebec/, scp "path_du_fichier"/functions.py ProtolabQuebec@"ip_du_pi":/home/ProtolabQuebec/
+	26- Effectuer la commande suivante pour transférer les fichiers vers le Pi -> scp "path_du_fichier"/main_camera.py pi@"ip_du_pi":/home/pi/,
+	                                                                              scp "path_du_fichier"/functions.py pi@"ip_du_pi":/home/pi/,
+	                                                                              scp "path_du_fichier"/servomotor_master.py pi@"ip_du_pi":/home/pi/,
+	                                                                              scp "path_du_fichier"/i2c_master.py pi@"ip_du_pi":/home/pi/
 
 	(Pour activer l'alimentation des port USB, il faut aller l'activer, car il est désactiver par défaut)
 	27- Aller dans le fichier pour écrire(sudo nano /boot/config.txt)
