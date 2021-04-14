@@ -321,25 +321,27 @@ class Window(QtWidgets.QMainWindow):
         self.tcp_skt.send(b"stop_camera")
         print("Stopping camera: " + str(self.active_camera + 1))
 
-    # TODO à voir comment faire la gestion de toutes les caméras
+    # TODO à voir si ça marche
     def start_cameras(self):
-        """for i in range(len(self.HOSTS)):
-            ip = self.HOSTS[i][0]
-            self.tcp_skt.connect((ip, self.PORT))
+        for i in range(len(self.HOSTS)):
+            if i != 0:
+                ip = self.HOSTS[i][0]
+                self.tcp_skt.connect((ip, self.PORT))
             self.tcp_skt.send(b"start_camera")
-            data = self.tcp_skt.recv(1024)
-            data = data.decode('utf-8')
-            print(data)"""
+
+            # on envoie un message vide pour signifier la fin de la communication
+            self.tcp_skt.send(b"")
         print("Start cameras!")
 
     def stop_cameras(self):
-        """for i in range(len(self.HOSTS)):
-            ip = self.HOSTS[i][0]
-            self.tcp_skt.connect((ip, self.PORT))
-            self.tcp_kt.send(b"stop_camera")
-            data = self.tcp_skt.recv(1024)
-            data = data.decode('utf-8')
-            print(data)"""
+        for i in range(len(self.HOSTS)):
+            if i != 0:
+                ip = self.HOSTS[i][0]
+                self.tcp_skt.connect((ip, self.PORT))
+            self.tcp_skt.send(b"stop_camera")
+
+            # on envoie un message vide pour signifier la fin de la communication
+            self.tcp_skt.send(b"")
         print("Stop cameras!")
 
     def manage_files(self):
@@ -571,11 +573,16 @@ class FileWindow(QtWidgets.QWidget):
             self.skt.send(b"download_file," + files)
             print("Downloading selected file to computer!")
 
-    # TODO à voir comment faire la gestion de toutes les caméras
+    # TODO à voir si ça marche
     def download_all(self):
-        """ip = self.host[0]
-        self.skt.connect((ip, self.port))
-        self.skt.send(b"download_all")"""
+        for i in range(len(self.HOSTS)):
+            if i != 0:
+                ip = self.HOSTS[i][0]
+                self.tcp_skt.connect((ip, self.PORT))
+            self.tcp_skt.send(b"download_all")
+
+            # on envoie un message vide pour signifier la fin de la communication
+            self.tcp_skt.send(b"")
         print("Deleting all files from camera!")
 
     def delete(self):
@@ -596,9 +603,14 @@ class FileWindow(QtWidgets.QWidget):
 
     # TODO à voir comment faire la gestion de toutes les caméras
     def delete_all(self):
-        """ip = self.host[0]
-        self.skt.connect((ip, self.port))
-        self.skt.send(b"delete_all")"""
+        for i in range(len(self.HOSTS)):
+            if i != 0:
+                ip = self.HOSTS[i][0]
+                self.tcp_skt.connect((ip, self.PORT))
+            self.tcp_skt.send(b"delete_all")
+
+            # on envoie un message vide pour signifier la fin de la communication
+            self.tcp_skt.send(b"")
         print("Deleting all files from camera!")
         self.refresh()
 

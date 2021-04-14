@@ -23,7 +23,7 @@ Pour le raspberry pi des caméras:
 	    picamera (sudo apt-get install python3-pip, sudo pip3 install picamera)
         pysendfile (sudo pip3 install pysendfile)
         smbus2 pour I2C (sudo pip3 install smbus2)
-        package pour GPIO (à revoir, n'a pas fonctionné pour Vincent)
+        RPi.GPIO (sudo pip3 install RPi.GPIO)
 
 	(Pour permettre le contrôle à distance, il faut aller l'activer, car il est désactiver par défaut)
 	16- Ce rendre dans les configurations du Pi (sudo raspi-config)
