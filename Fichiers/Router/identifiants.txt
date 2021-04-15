@@ -1,6 +1,6 @@
 Pour les raspberry pi des caméras:
-	username: ProtolabQuebec
-	password: Occulus
+	username: pi
+	password: ProtolabQuebec
 
 Pour le router:
 	username: admin

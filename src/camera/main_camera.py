@@ -6,8 +6,7 @@ import threading
 import time
 
 import functions
-# TODO à decomment les trucs pour la lecture de la batterie
-# import i2c_master
+import i2c_master
 
 from picamera import PiCamera
 from multiprocessing import Process
@@ -18,12 +17,10 @@ from ftplib import FTP
 def get_preview(cam, send_to):
     while True:
         # on prend l'image
-        # cam.capture("/home/ProtolabQuebec/preview/preview.jpg")
         cam.capture("/home/pi/preview/preview.jpg")
 
         # on va ouvrir l'image à envoyer
         # TODO à revérifier si c'est correct
-        # input_file = open("/home/ProtolabQuebec/preview/preview.jpg", "rb")
         input_file = open("/home/pi/preview/preview.jpg", "rb")
 
         # on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
@@ -51,7 +48,7 @@ camera = PiCamera()
 camera.resolution = (1920, 1080)
 camera.framerate = 30
 
-# battery_manager = i2c_master.BMSCom()
+battery_manager = i2c_master.BMSCom()
 
 # on met la camera en preview pour la préparer et on la garde afin de s'assurer qu'elle soit prête à prendre une photo
 # à n'importe quel moment
@@ -116,7 +113,6 @@ while True:
 
             elif data[0] == "start":
                 # on va chercher le nombre de fichier dans le dossier recordings
-                # cmd = "ls /home/ProtolabQuebec/recordings/"
                 cmd = "ls /home/pi/recordings/"
                 process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                 output = process.stdout.read()
@@ -124,7 +120,6 @@ while True:
                 output = output.decode()
                 files = output.split("\n")
                 number = len(files)
-                # camera.start_recording("/home/ProtolabQuebec/recordings/" + str(number) + ".h264")
                 camera.start_recording("/home/pi/recordings/recording" + str(number) + ".h264")
                 print("Starting camera!")
 
@@ -163,7 +158,6 @@ while True:
                     fichiers = data[2]
                     fichiers = fichiers.split(',')
                     for i in range(len(fichiers) - 1):
-                        # cmd = "rm /home/ProtolabQuebec/recordings/" + str(fichiers[i])
                         cmd = "rm /home/pi/recordings/" + str(fichiers[i])
                         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                         output = process.stdout.read()
@@ -171,7 +165,6 @@ while True:
                     print("Deleting file(s)!")
 
                 elif command == "delete_all":
-                    # cmd = "rm /home/ProtolabQuebec/recordings/*"
                     cmd = "rm /home/pi/recordings/*"
                     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                     output = process.stdout.read()
@@ -202,7 +195,6 @@ while True:
                 elif command == "download_all":
 
                     # on va chercher le nombre de fichiers totaux à downloader
-                    # cmd = "ls /home/ProtolabQuebec/recordings/"
                     cmd = "ls /home/pi/recordings/"
                     process = subprocess.Popen(cmd.split())
                     output, error = process.communicate()
@@ -219,29 +211,7 @@ while True:
                     print("Downloading all files!")
 
             else:
-                """if command == "check_files":
-                    # cmd = "ls /home/ProtolabQuebec/recordings/"
-                    cmd = "ls /home/pi/recordings/"
-                    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-                    output = process.stdout.read()
-                    output = output.decode()
-                    print(output)
-                    files = output.split(" ")
-                    names = ""
-                    for i in range(len(files)):
-                        if i == 0:
-                            names = names + files[0]
-                        else:
-                            names = names + "," + files[i]
-                    print("Checking files!")
-                    rep = names
-
-                    # on envoie la réponse à la station de base
-                    connection.send(rep.encode('utf-8'))"""
-
-                # elif command == "refresh_files
                 if command == "refresh_files":
-                    # cmd = "ls /home/ProtolabQuebec/recordings/"
                     cmd = "ls /home/pi/recordings/"
                     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                     output = process.stdout.read()

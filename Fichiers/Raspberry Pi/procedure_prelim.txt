@@ -2,70 +2,69 @@ Pour le raspberry pi des caméras:
     (Setup de base)
 	1- Brancher la carte micro-SD dans l'ordinateur
 	2- Choisir l'OS Raspberry Pi OS Lite (32-bit) (Menu principal -> Raspberry Pi OS other -> Raspberry Pi OS Lite (32-bit)) sur le logiciel Raspberry Pi Manager et choisir la carte SD afin de copier l'OS de base
-	3- Démarrer le raspberry et se connecter avec le compte de base (username: pi, password: raspberry)
-	4- Ajouter un nouvel utilisateur sudo nommer ProtolabQuebec (sudo useradd -m ProtolabQuebec)
-	5- Mettre le mot de passe à Occulus (sudo passwd ProtolabQuebec)
-	6- Mettre le nouvel utilisateur ProtolabQuebec dans le groupe des sudoers (sudo usermod -a -G sudo ProtolabQuebec)
-	7- Se déconnecter avec la commande logout et se reconnecter dans le compte créer précédemment (username: ProtolabQuebec password: Occulus)
-	8- Créer un répertoire recordings et un répertoire preview dans le path /home/ProtolabQuebec (mkdir recordings et mkdir preview) 
-	9- Mettre toutes les permissions sur les deux dossiers précedemment créer (chmod 777 recordings et chmod 777 preview)
-	10- Supprimer l'ancien utilisateur en faisant (sudo userdel -r pi)
+	3- À partir de l'explorateur Windows, aller ajouter dans les fichiers de la carte SD (exemple E: boot) un fichier ssh pour activer la communication ssh (fichier nommer ssh sans extension)
+	4- Démarrer le raspberry et se connecter (par Ethernet, host: raspberrypi.local en utilisant PuTTY) avec le compte de base (username: pi, password: raspberry)
+	5- Changer le mot de passe à ProtolabQuebec (sudo passwd pi)
+	6- Créer un répertoire recordings et un répertoire preview dans le path /home/pi (mkdir recordings et mkdir preview)
 
 	(Pour permettre au Pi de se connecter au réseau du router, il faut aller ajouter le nom du réseau et son mot de passe dans le fichier wpa-supplicant)
-	11- Aller ouvrir le fichier pour pouvoir aller l'éditer (sudo nano /etc/wpa_supplicant/wpa_supplicant.conf)
-	12- Ajouter une section network={} et dans celle-ci aller ajouter ssid="Protolab_2.4GHz" et psk="Occulus2.4"
-	13- Il faut par la suite aller définir le pays dans lequel on opère, donc on fait sudo raspi-config -> Localisation Options -> L4 WLAN Country -> CA canada)
-	14- Attendre que la configuration soit terminée et cliquer sur Finish
-	15- Reboot
+	7- Il faut aller définir le pays dans lequel on opère, donc on fait sudo raspi-config -> Localisation Options -> L4 WLAN Country -> CA canada)
+	8- Attendre que la configuration soit terminée et cliquer sur Finish
+	8- Reboot (et se reconnecter par SSH)
+	9- Aller ouvrir le fichier pour pouvoir aller l'éditer (sudo nano /etc/wpa_supplicant/wpa_supplicant.conf)
+    10- Ajouter une section network={} et dans celle-ci aller ajouter les informations d'un réseau ayant accès à Internet pour la fin de la configuration (ssid="nom du réseau" et psk="mot de passe du réseau")
+    11- Faire un reboot du pi pour qu'il puisse se connecter au réseau Wi-Fi (sudo reboot et se reconnecter par SSH)
+    12- Vérifier que le pi est bien connecté au réseau en allant voir l'adresse ip de wlan0 en faisant la commande ifconfig
 
-	Ajouter les packages à installer (sudo apt install python3-pip, connexion Internet requise et ensuite faire sudo apt-get update pour être sûr):
+    (Maintenant que le pi est configuré sur un Wi-Fi, il n'est plus nécessaire de se connecter par Ethernet. Il est possible de se connecter par SSH à distance avec un ordinateur connecté sur le même réseau en ouvrant
+    un terminal de commande et en exécutant la commande suivante ssh pi@"adresse du pi" et lorsque demandé en entrant le mot de passe)
+	13- Ajouter les packages à installer (faire sudo apt-get update et par la suite sudo apt install python3-pip):
 	    PyQt5 (sudo apt-get install qt5-default pyqt5-dev pyqt5-dev-tools)
-	    picamera (sudo apt-get install python3-pip, sudo pip3 install picamera)
-        pysendfile (sudo pip3 install pysendfile)
+	    picamera (sudo pip3 install picamera)
         smbus2 pour I2C (sudo pip3 install smbus2)
         RPi.GPIO (sudo pip3 install RPi.GPIO)
 
-	(Pour permettre le contrôle à distance, il faut aller l'activer, car il est désactiver par défaut)
-	16- Ce rendre dans les configurations du Pi (sudo raspi-config)
-	17- Sélectionner Interface Options
-	18- Sélectionner P2 SSH
-	19- Sélectionner Yes
-	20- Attendre que la configuration soit finie et sélectionner Finish
-
 	(Pour permettre la communication I2C, il faut aller l'activer, car il est désactiver par défaut)
-	21- Ce rendre dans les configurations du Pi (sudo raspi-config)
-	22- Sélectionner Interface Options
-	23- Sélectionner P5 I2C
-	24- Sélectionner Yes
-	25- Attendre que la configuration soit finie et sélectionner Finish
+	14- Ce rendre dans les configurations du Pi (sudo raspi-config)
+	15- Sélectionner Interface Options
+	16- Sélectionner P5 I2C
+	17- Sélectionner Yes
+	18- Attendre que la configuration soit finie et sélectionner Finish
 
+	(Pour permettre l'utilisation des caméras)
+	19- Ce rendre dans les configurations du Pi (sudo raspi-config)
+	20- Sélectionner Interface Options
+	21- Sélectionner P1 Camera
+	22- Sélectionner Yes
+	23- Attendre que la configuration soit finie et sélectionner Finish
+	24- Reboot du pi
+
+	(Pour activer l'alimentation des port USB, il faut aller l'activer, car il est désactiver par défaut)
+	25- Aller dans le fichier pour écrire(sudo nano /boot/config.txt)
+	26- Ajouter dans le fichier: dtoverlay=dwc2,dr_mode=host
+	27- Faire un reboot du Pi
+
+    (Pour pouvoir que la caméra fonctionne)
+	28- Updater et upgrader le système (sudo apt update, sudo apt full-upgrade) pour être sûr que tout soit correct
+    29- Reboot du pi
+    30- Faire la commande sudo wget https://www.raspberrypi.org/documentation/hardware/computemodule/dt-blob-cam1.dts -o /boot/dt-blob-cam1.dts
+    31- Aller dans le dossier boot (cd /boot)
+    32- Faire la commande sudo dtc -I dts -O dtb -o /boot/dt-blob.bin /home/pi/dt-blob-cam1.dts
+    33- Reboot
+    34- Vérifier si la caméra fonctionnne bien en faisant vcgencmd get_camera et si detected=1, faire raspistill -o test.jpg pour prendre une photo
 
 	(Pour transférer le fichier main de la camera dans le Pi)
-	26- Effectuer la commande suivante pour transférer les fichiers vers le Pi -> scp "path_du_fichier"/main_camera.py pi@"ip_du_pi":/home/pi/,
+	35- Effectuer la commande suivante pour transférer les fichiers vers le Pi -> scp "path_du_fichier"/main_camera.py pi@"ip_du_pi":/home/pi/,
+	                                                                              scp "path_du_fichier"/broadcast_camera.py pi@"ip_du_pi":/home/pi/,
 	                                                                              scp "path_du_fichier"/functions.py pi@"ip_du_pi":/home/pi/,
 	                                                                              scp "path_du_fichier"/servomotor_master.py pi@"ip_du_pi":/home/pi/,
 	                                                                              scp "path_du_fichier"/i2c_master.py pi@"ip_du_pi":/home/pi/
 
-	(Pour activer l'alimentation des port USB, il faut aller l'activer, car il est désactiver par défaut)
-	27- Aller dans le fichier pour écrire(sudo nano /boot/config.txt)
-	28- Ajouter dans le fichier: dtoverlay=dwc2,dr_mode=host
-	29- Faire un reboot du Pi
+	# TODO rajouter le fait de faire runner les scripts broadcast_camera.py et main_camera au boot
 
-	(Pour pouvoir que la caméra fonctionne?)
-	30- Ce rendre dans les configurations du Pi (sudo raspi-config)
-	31- Sélectionner Interface Options
-	32- Sélectionner P1 Camera
-	33- Sélectionner Yes
-	34- Attendre que la configuration soit finie et sélectionner Finish
-	35- Updater et upgrader le système (sudo apt update, sudo apt full-upgrade)
-    36- Reboot
-    37- Faire la commande sudo wget https://www.raspberrypi.org/documentation/hardware/computemodule/dt-blob-cam1.dts -o /boot/dt-blob-cam1.dts
-    38- Aller dans le dossier boot (cd /boot)
-    39- Faire la commande sudo dtc -I dts -O dtb -o /boot/dt-blob-cam1.bin dt-blob-cam1.dts (si la commande ne fonctionne pas, faire sudo apt install device-tree-compiler)
-    40- Reboot
-    41- Vérifier si la caméra fonctionnne bien en faisant raspistill -o text.jpg
-
-	# TODO rajouter le fait de faire runner le script au boot
+    36- Refaire les mêmes étapes que plus haut afin de venir changer les informations de la connexion Wi-Fi à celle du router du projet (sudo nano /etc/wpa_supplicant/wpa_supplicant.conf, ssid="Protolab_2.4GHz" psk="Occulus2.4")
+    37- Faire un reboot du pi pour qu'il puisse se connecter au nouveau réseau (ne pas oublier de brancher le router)
+    38- Pour tester que le pi est bien connecté au réseau, il est possible de connecter un ordinateur sur ce réseau et utiliser un logiciel comme Angry IP Scanner pour détecter si le pi est bien connecté sur le réseau
 
 Pour le router (rien de bien spécial):
 	1- Se connecter dans le router (aucun mot de passe au début)
