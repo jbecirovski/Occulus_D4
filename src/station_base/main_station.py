@@ -18,8 +18,8 @@ class Window(QtWidgets.QMainWindow):
     # contructeur de la classe
     def __init__(self):
         super(Window, self).__init__()
-        self.setFixedHeight(800)
-        self.setFixedWidth(1200)
+        self.setFixedHeight(1200)
+        self.setFixedWidth(1600)
         self.setWindowTitle("Application Camera")
         self.setWindowIcon(QtGui.QIcon(r"../ressource/protolabLogo.png"))
 
@@ -346,7 +346,8 @@ class Window(QtWidgets.QMainWindow):
 
     def manage_files(self):
         print("Managing files!")
-        self.fileWindow = FileWindow(self.active_camera, self.tcp_skt, self.HOSTS[self.active_camera], self.PORT)
+        self.fileWindow = FileWindow(self.active_camera, self.tcp_skt, self.HOSTS[self.active_camera], self.PORT,
+                                     self.HOSTS, self.active_camera)
         if self.fileWindow.isVisible():
             self.fileWindow.hide()
         else:
@@ -438,12 +439,14 @@ class Window(QtWidgets.QMainWindow):
 class FileWindow(QtWidgets.QWidget):
 
     # constructeur de la classe
-    def __init__(self, camera, skt, host, port):
+    def __init__(self, camera, skt, host, port, hosts, active_camera):
         super(FileWindow, self).__init__()
         self.camera = camera
         self.skt = skt
         self.host = host
         self.port = port
+        self.HOSTS = hosts
+        self.active_camera = active_camera
         self.setFixedHeight(600)
         self.setFixedWidth(1000)
         self.setWindowTitle("Manage Files")
@@ -570,11 +573,15 @@ class FileWindow(QtWidgets.QWidget):
         for i in range(len(self.HOSTS)):
             if i != 0:
                 ip = self.HOSTS[i][0]
-                self.tcp_skt.connect((ip, self.PORT))
+                self.skt.connect((ip, self.PORT))
             self.tcp_skt.send(b"download_all")
 
             # on envoie un message vide pour signifier la fin de la communication
             self.tcp_skt.send(b"")
+
+        # on revient se connecter à la caméra active pour pouvoir continuer d'envoyer des commandes
+        ip = self.HOSTS[self.active_camera]
+        self.skt.connect((ip, self.PORT))
         print("Deleting all files from camera!")
 
     def delete(self):
@@ -598,11 +605,15 @@ class FileWindow(QtWidgets.QWidget):
         for i in range(len(self.HOSTS)):
             if i != 0:
                 ip = self.HOSTS[i][0]
-                self.tcp_skt.connect((ip, self.PORT))
-            self.tcp_skt.send(b"delete_all")
+                self.skt.connect((ip, self.PORT))
+            self.skt.send(b"delete_all")
 
             # on envoie un message vide pour signifier la fin de la communication
-            self.tcp_skt.send(b"")
+            self.skt.send(b"")
+
+        # on revient se connecter à la caméra active pour pouvoir continuer d'envoyer des commandes
+        ip = self.HOSTS[self.active_camera]
+        self.skt.connect((ip, self.PORT))
         print("Deleting all files from camera!")
         self.refresh()
 
