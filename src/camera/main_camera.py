@@ -48,6 +48,10 @@ camera = PiCamera()
 camera.resolution = (1920, 1080)
 camera.framerate = 30
 
+# déclaration des variables pour tenir compte des déplacements de la caméra
+horizontal = 45
+vertical = 45
+
 battery_manager = i2c_master.BMSCom()
 
 # on met la camera en preview pour la préparer et on la garde afin de s'assurer qu'elle soit prête à prendre une photo
@@ -130,24 +134,41 @@ while True:
             # référence de 45 degrés
             elif data[0] == "move":
                 if command == "move_up":
-                    cmd = "python3 servomotor_master.py 33 45"
-                    subprocess.Popen(cmd)
-                    print("Moving up!")
+                    vertical = vertical + 5
+                    if vertical <= 90:
+                        cmd = "python3 servomotor_master.py 33 " + str(vertical)
+                        subprocess.Popen(cmd)
+                        print("Moving up!")
+                    else:
+                        vertical = vertical - 5
 
+                # TODO à vérifier si ça bouge bien dans le bon sens
                 elif command == "move_right":
-                    cmd = "python3 servomotor_master.py 32 45"
-                    subprocess.Popen(cmd)
-                    print("Moving right!")
+                    horizontal = horizontal + 5
+                    if horizontal <= 90:
+                        cmd = "python3 servomotor_master.py 32 " + str(horizontal)
+                        subprocess.Popen(cmd)
+                        print("Moving right!")
+                    else:
+                        horizontal = horizontal - 5
 
                 elif command == "move_left":
-                    cmd = "python3 servomotor_master.py 33 45"
-                    subprocess.Popen(cmd)
-                    print("Moving left!")
+                    horizontal = horizontal - 5
+                    if horizontal >= 0:
+                        cmd = "python3 servomotor_master.py 32 " + str(horizontal)
+                        subprocess.Popen(cmd)
+                        print("Moving left!")
+                    else:
+                        horizontal = horizontal + 5
 
                 elif command == "move_down":
-                    cmd = "python3 servomotor_master.py 33 45"
-                    subprocess.Popen(cmd)
-                    print("Moving down!")
+                    vertical = vertical - 5
+                    if vertical >= 0:
+                        cmd = "python3 servomotor_master.py 33 " + str(vertical)
+                        subprocess.Popen(cmd)
+                        print("Moving down!")
+                    else:
+                        vertical = vertical + 5
 
                 else:
                     break

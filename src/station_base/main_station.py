@@ -511,7 +511,6 @@ class FileWindow(QtWidgets.QWidget):
 
         self.path.resize(600, 20)
         self.path.move(10, 0)
-        # TODO à changer
         self.path.setText("Directory in camera " + str(self.camera + 1) + ": /home/pi/recordings/")
 
     def select_file(self):
@@ -546,7 +545,7 @@ class FileWindow(QtWidgets.QWidget):
             for i in range(len(data) - 1):  # -1 pour éviter le dernier string vide de split
                 self.button_list.append(QtWidgets.QPushButton(data[i], self))
                 self.button_list[i].setObjectName(data[i])
-                self.button_list[i].move(30, 20 * (i + 2))
+                self.button_list[i].move(30, 100 + 20 * (i + 2))
                 self.button_list[i].resize(960, 20)
                 self.button_list[i].released.connect(self.select_file)
                 self.button_list[i].show()
