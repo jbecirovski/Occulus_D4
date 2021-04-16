@@ -5,7 +5,7 @@ import subprocess
 import threading
 import time
 
-import functions
+import src.other.functions
 import i2c_master
 
 from picamera import PiCamera
@@ -136,8 +136,8 @@ while True:
                 if command == "move_up":
                     vertical = vertical + 5
                     if vertical <= 90:
-                        cmd = "python3 servomotor_master.py 33 " + str(vertical)
-                        subprocess.Popen(cmd)
+                        cmd = "python3 servomotor_master.py 33 {}".format(str(vertical))
+                        subprocess.Popen(cmd, shell=True)
                         print("Moving up!")
                     else:
                         vertical = vertical - 5
@@ -146,8 +146,8 @@ while True:
                 elif command == "move_right":
                     horizontal = horizontal + 5
                     if horizontal <= 90:
-                        cmd = "python3 servomotor_master.py 32 " + str(horizontal)
-                        subprocess.Popen(cmd)
+                        cmd = "python3 servomotor_master.py 32 {}".format(str(horizontal))
+                        subprocess.Popen(cmd, shell=True)
                         print("Moving right!")
                     else:
                         horizontal = horizontal - 5
@@ -155,8 +155,8 @@ while True:
                 elif command == "move_left":
                     horizontal = horizontal - 5
                     if horizontal >= 0:
-                        cmd = "python3 servomotor_master.py 32 " + str(horizontal)
-                        subprocess.Popen(cmd)
+                        cmd = "python3 servomotor_master.py 32 {}".format(str(horizontal))
+                        subprocess.Popen(cmd, shell=True)
                         print("Moving left!")
                     else:
                         horizontal = horizontal + 5
@@ -164,8 +164,8 @@ while True:
                 elif command == "move_down":
                     vertical = vertical - 5
                     if vertical >= 0:
-                        cmd = "python3 servomotor_master.py 33 " + str(vertical)
-                        subprocess.Popen(cmd)
+                        cmd = "python3 servomotor_master.py 33 {}".format(str(vertical))
+                        subprocess.Popen(cmd, shell=True)
                         print("Moving down!")
                     else:
                         vertical = vertical + 5
@@ -191,6 +191,7 @@ while True:
                     output = process.stdout.read()
                     print(output)
                     print("Deleting all files!")
+                    connection.shutdown(socket.SHUT_RDWR)
 
                 else:
                     break
@@ -202,41 +203,43 @@ while True:
                 ftp.login("user", "12345")
                 ftp.cwd("/")
                 if command == "download_file":
-                    fichiers = data[2]
-                    print(fichiers)
-                    fichiers = fichiers.split(',')
+                    files = data[2]
+                    print(files)
+                    files = files.split(',')
 
                     # on crée un thread pour chaque fichier à télécharger
-                    for i in range(len(fichiers) - 1):
+                    for i in range(len(files) - 1):
                         # TODO à vérifier si ça marche
-                        threading.Thread(target=functions.upload_file, args=('/home/pi/recordings/' + fichiers[i],
-                                                                             fichiers[i], ftp)).start()
+                        # threading.Thread(target=functions.upload_file, args=('/home/pi/recordings/' + files[i],
+                                                                             #files[i], ftp)).start()
+                        ftp.storbinary('STOR ' + files[i], open('/home/pi/recordings/' + files[i], 'rb'))
+
                     print("Downloading file(s)!")
 
                 elif command == "download_all":
 
                     # on va chercher le nombre de fichiers totaux à downloader
                     cmd = "ls /home/pi/recordings/"
-                    process = subprocess.Popen(cmd.split())
-                    output, error = process.communicate()
-                    output = output.decode()
+                    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+                    output = process.stdout.read().decode('utf-8')
                     print(output)
-                    files = output.split(" ")
-                    number = len(output)
+                    files = output.split("\n")
+                    print(files)
 
                     # on crée un thread pour chaque fichier à télécharger
-                    for i in range(len(files)):
+                    for i in range(len(files) - 1):
                         # TODO à voir si ça marche
-                        threading.Thread(target=functions.upload_file, args=('/home/pi/recordings/' + fichiers[i],
-                                                                             fichiers[i], ftp)).start()
+                        # threading.Thread(target=functions.upload_file, args=('/home/pi/recordings/' + files[i],
+                                                                             # files[i], ftp)).start()
+                        ftp.storbinary('STOR ' + files[i], open('/home/pi/recordings/' + files[i], 'rb'))
+
                     print("Downloading all files!")
 
             else:
                 if command == "refresh_files":
                     cmd = "ls /home/pi/recordings/"
                     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-                    output = process.stdout.read()
-                    output = output.decode()
+                    output = process.stdout.read().decode()
                     print(output)
                     files = output.split(" ")
                     names = ""

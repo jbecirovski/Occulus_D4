@@ -18,8 +18,8 @@ class Window(QtWidgets.QMainWindow):
     # contructeur de la classe
     def __init__(self):
         super(Window, self).__init__()
-        self.setFixedHeight(1200)
-        self.setFixedWidth(1600)
+        self.setFixedHeight(800)
+        self.setFixedWidth(1200)
         self.setWindowTitle("Application Camera")
         self.setWindowIcon(QtGui.QIcon(r"../ressource/protolabLogo.png"))
 
@@ -477,12 +477,12 @@ class FileWindow(QtWidgets.QWidget):
 
     # création de l'interface
     def create_ui(self):
-        self.selected_file_label.move(40, 20)
+        self.selected_file_label.move(10, 30)
         self.selected_file_label.resize(700, 20)
         self.selected_file_label.setText("Selected file(s): ")
 
-        self.file_label.move(10, 20)
-        self.file_label.resize(70, 20)
+        self.file_label.move(10, 60)
+        self.file_label.resize(40, 20)
         self.file_label.setText("Files: ")
 
         self.refresh_button.resize(120, 60)
@@ -545,7 +545,7 @@ class FileWindow(QtWidgets.QWidget):
             for i in range(len(data) - 1):  # -1 pour éviter le dernier string vide de split
                 self.button_list.append(QtWidgets.QPushButton(data[i], self))
                 self.button_list[i].setObjectName(data[i])
-                self.button_list[i].move(30, 100 + 20 * (i + 2))
+                self.button_list[i].move(30, 40 + 20 * (i + 2))
                 self.button_list[i].resize(960, 20)
                 self.button_list[i].released.connect(self.select_file)
                 self.button_list[i].show()
@@ -567,20 +567,21 @@ class FileWindow(QtWidgets.QWidget):
             self.skt.send(b"download_file_" + files.encode('utf-8'))
             print("Downloading selected file to computer!")
 
-    # TODO à voir si ça marche
+    # TODO Même à une caméra, ça plante lorsque j'envoie rien
+    # TODO À tester avec plusieurs caméras pour voir si ça marche (already connected socket)
     def download_all(self):
         for i in range(len(self.HOSTS)):
             if i != 0:
                 ip = self.HOSTS[i][0]
                 self.skt.connect((ip, self.PORT))
-            self.tcp_skt.send(b"download_all")
+            self.skt.send(b"download_all")
 
             # on envoie un message vide pour signifier la fin de la communication
-            self.tcp_skt.send(b"")
+            self.skt.send(b"")
 
         # on revient se connecter à la caméra active pour pouvoir continuer d'envoyer des commandes
         ip = self.HOSTS[self.active_camera]
-        self.skt.connect((ip, self.PORT))
+        self.skt.connect((ip[0], self.port))
         print("Deleting all files from camera!")
 
     def delete(self):
@@ -599,7 +600,8 @@ class FileWindow(QtWidgets.QWidget):
             print("Deleting selected file(s) from camera!")
             self.refresh()
 
-    # TODO à voir comment faire la gestion de toutes les caméras
+    # TODO Même à une caméra, ça plante lorsque j'envoie rien
+    # TODO À tester avec plusieurs caméras pour voir si ça marche (already connected socket)
     def delete_all(self):
         for i in range(len(self.HOSTS)):
             if i != 0:
@@ -612,7 +614,7 @@ class FileWindow(QtWidgets.QWidget):
 
         # on revient se connecter à la caméra active pour pouvoir continuer d'envoyer des commandes
         ip = self.HOSTS[self.active_camera]
-        self.skt.connect((ip, self.PORT))
+        self.skt.connect((ip[0], self.port))
         print("Deleting all files from camera!")
         self.refresh()
 
