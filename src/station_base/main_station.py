@@ -264,7 +264,7 @@ class Window(QtWidgets.QMainWindow):
 
             # start le process pour aller chercher les images de preview
             self.preview_process = Process(target=src.other.functions.get_preview_process,
-                                           args=(self.skt, self.HOSTS[self.active_camera][0], self.PORT,
+                                           args=(self.tcp_skt, self.HOSTS[self.active_camera][0], self.PORT,
                                                  self.preview_queue,))
             self.preview_process.start()
 

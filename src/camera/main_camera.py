@@ -5,7 +5,7 @@ import subprocess
 import threading
 import time
 
-import src.other.functions
+import functions
 import i2c_master
 
 from picamera import PiCamera
@@ -14,21 +14,31 @@ from ftplib import FTP
 
 
 # définition de la fonction pour aller lire l'image dans un process externe (non-bloquant)
-def get_preview(cam, send_to):
+def get_preview(cam, send_to, ftp_connection):
+    ftp_connection = FTP('')
+    ftp_connection.connect(STATION_IP, 2121)
+    ftp_connection.login("user", "12345")
+    ftp_connection.cwd("/")
     while True:
         # on prend l'image
         cam.capture("/home/pi/preview/preview.jpg")
+        print("Preview captured!")
 
-        # on va ouvrir l'image à envoyer
+        # on va sauvegarder l'image sur le serveur
+        ftp.storbinary('STOR previews.jpg', open('/home/pi/preview/preview.jpg', 'rb'))
+        print("Image sent")
+
+        """"# on va ouvrir l'image à envoyer
         # TODO à revérifier si c'est correct
         input_file = open("/home/pi/preview/preview.jpg", "rb")
+        print("File opened")
 
         # on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
         image = input_file.read(65536)
         while image:
             send_to.send(image)
             image = input_file.read(65536)
-        input_file.close()
+        input_file.close()"""
         time.sleep(0.5)
 
 
@@ -93,19 +103,21 @@ while True:
                     if not active_preview:
                         active_preview = True
                         # on crée le process pour aller faire la lecture de l'image et l'envoyer (child process)
-                        read_process = Process(target=get_preview, args=(camera, connection))
+                        print("Starting process!")
+                        read_process = Process(target=get_preview, args=(camera, connection, ftp))
                         read_process.start()
 
                     else:
                         # TODO à voir si c'est limitant
                         # on attend que le process ait fini
                         read_process.join()
+                        active_preview = False
                         # si ça ne marche pas ou si c'est trop long, faire un read_process.terminate
 
                     print("Getting preview!")
 
                 elif command == "get_infos":
-                    # battery = str(battery_manager.get_charge1000())
+                    # battery = battery_manager.get_charge1000()
                     battery = "50%"
                     rep = local_ip + "," + battery
                     print("Getting infos!")

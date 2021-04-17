@@ -40,11 +40,11 @@ def get_info_process(skt, ip, port, info_queue):
         # pour être complémentaire à la fonction du UI (ne pas le faire 2 fois de suite en startant/changeant de camera)
         time.sleep(5)
         # print("Getting infos")
-        """skt.send(b"get_infos")
+        skt.send(b"get_infos")
         data = skt.recv(1024)
         data = data.decode('utf-8')
-        print(data)"""
-        data = "25%"
+        # print(data)
+        # data = "25%"
         # print(data)
         info_queue.put((str(ip[1] + 1), str(ip[0]), str(data)))
 
@@ -52,17 +52,19 @@ def get_info_process(skt, ip, port, info_queue):
 def get_preview_process(skt, ip, port, preview_queue):
     while True:
         print("Getting preview")
-        """skt.send(b"get_preview")
-        datas = None
+        skt.send(b"get_preview")
+        """datas = None
         data = skt.recv(65536)
         while data:
             datas = datas + data
             data = skt.recv(65536)"""
-        read_file = open(r"../ressource/regie.png", "rb")
-        data = read_file.read()
-        read_file.close()
-        preview_queue.put(data)
+        # on vient attendre que le premier fichier se rende sur le serveur FTP
         time.sleep(1)
+        # read_file = open(r"../ressource/regie.png", "rb")
+        # data = read_file.read()
+        # read_file.close()
+        # preview_queue.put(data)
+        # time.sleep(1)
 
 
 def update_infos_thread(info_queue, info):
@@ -80,11 +82,11 @@ def update_infos_thread(info_queue, info):
 def update_preview_thread(preview_queue, preview):
     while True:
         try:
-            image = preview_queue.get()
+            """image = preview_queue.get()
             print("updating preview")
-            file = open(r"../ressource/preview.png", "wb")
+            file = open(r"../ressource/previews.jpg", "rb")
             file.write(image)
-            file.close()
+            file.close()"""
             preview.setPixmap(QtGui.QPixmap(r"../ressource/preview.png"))
         except queue.Empty:
             time.sleep(1)
