@@ -177,6 +177,8 @@ class Window(QtWidgets.QMainWindow):
         self.preview_button.resize(120, 60)
         self.preview_button.clicked.connect(self.start_stop_preview)
 
+        self.preview.setPixmap(QtGui.QPixmap(r"../ressource/preview.png"))
+
         QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
 
         extract_action = QtWidgets.QAction("Setting", self)
@@ -235,7 +237,7 @@ class Window(QtWidgets.QMainWindow):
 
         # starter le thread pour aller updater le preview
         self.preview_thread = threading.Thread(target=src.other.functions.update_preview_thread,
-                                               args=(self.preview_queue, self.preview,),
+                                               args=(self.preview,),
                                                daemon=True).start()
 
     # méthodes de classe
@@ -263,9 +265,7 @@ class Window(QtWidgets.QMainWindow):
             print("Start preview")
 
             # start le process pour aller chercher les images de preview
-            self.preview_process = Process(target=src.other.functions.get_preview_process,
-                                           args=(self.tcp_skt, self.HOSTS[self.active_camera][0], self.PORT,
-                                                 self.preview_queue,))
+            self.preview_process = Process(target=src.other.functions.get_preview_process, args=(self.tcp_skt,))
             self.preview_process.start()
 
     # TODO revoir la façon dont on gère les connexions des caméras (arrêter la connexion et en recommencer une autre)
@@ -274,6 +274,12 @@ class Window(QtWidgets.QMainWindow):
         if new_active_camera != self.active_camera:
             self.active_camera = new_active_camera
             print("Camera " + str(self.active_camera + 1) + " active")
+
+            # on vient fermer la connexion en cours et on en redémarre une avec la bonne caméra
+            self.tcp_skt.send(b'')
+            # TODO à voir si ça marche
+            self.PORT = self.PORT + 1
+            self.tcp_skt.connect((self.active_camera, self.PORT))
             self.get_infos()
             # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
             self.info_process.terminate()
@@ -331,6 +337,7 @@ class Window(QtWidgets.QMainWindow):
 
             # on envoie un message vide pour signifier la fin de la communication
             self.tcp_skt.send(b"")
+            self.PORT = self.PORT + 1
         print("Start cameras!")
 
     def stop_cameras(self):
@@ -342,6 +349,7 @@ class Window(QtWidgets.QMainWindow):
 
             # on envoie un message vide pour signifier la fin de la communication
             self.tcp_skt.send(b"")
+            self.PORT = self.PORT + 1
         print("Stop cameras!")
 
     def manage_files(self):
@@ -405,13 +413,13 @@ class Window(QtWidgets.QMainWindow):
                           "\n Adresse IP: " + str(cam[0]) +
                           "\n Batterie restante: " + percent)
 
-    def style_pop_up(self):
+    """def style_pop_up(self):
         msg = QMessageBox()
         msg.setWindowTitle("Style choice")
         msg.setWindowIcon(QtGui.QIcon("../ressource/protolabLogo.png"))
         msg.setText("Choose the window style")
         msg.setStandardButtons(QMessageBox.Apply | QMessageBox.Cancel)
-        x = msg.exec()
+        x = msg.exec()"""
 
     def remove(self):
         if len(self.HOSTS) > 1:
@@ -445,7 +453,8 @@ class FileWindow(QtWidgets.QWidget):
         self.skt = skt
         self.host = host
         self.port = port
-        self.HOSTS = hosts
+        self.ports = port
+        self.hosts = hosts
         self.active_camera = active_camera
         self.setFixedHeight(600)
         self.setFixedWidth(1000)
@@ -570,18 +579,22 @@ class FileWindow(QtWidgets.QWidget):
     # TODO Même à une caméra, ça plante lorsque j'envoie rien
     # TODO À tester avec plusieurs caméras pour voir si ça marche (already connected socket)
     def download_all(self):
-        for i in range(len(self.HOSTS)):
+        for i in range(len(self.hosts)):
             if i != 0:
-                ip = self.HOSTS[i][0]
-                self.skt.connect((ip, self.PORT))
+                ip = self.hosts[i][0]
+                self.skt.connect((ip, self.port))
             self.skt.send(b"download_all")
 
             # on envoie un message vide pour signifier la fin de la communication
             self.skt.send(b"")
+            if i != 0:
+                self.ports = self.ports + 1
+            else:
+                self.ports = self.port + 1
 
         # on revient se connecter à la caméra active pour pouvoir continuer d'envoyer des commandes
-        ip = self.HOSTS[self.active_camera]
-        self.skt.connect((ip[0], self.port))
+        ip = self.hosts[self.active_camera]
+        self.skt.connect((ip[0], self.ports))
         print("Deleting all files from camera!")
 
     def delete(self):
@@ -603,18 +616,22 @@ class FileWindow(QtWidgets.QWidget):
     # TODO Même à une caméra, ça plante lorsque j'envoie rien
     # TODO À tester avec plusieurs caméras pour voir si ça marche (already connected socket)
     def delete_all(self):
-        for i in range(len(self.HOSTS)):
+        for i in range(len(self.hosts)):
             if i != 0:
-                ip = self.HOSTS[i][0]
-                self.skt.connect((ip, self.PORT))
+                ip = self.hosts[i][0]
+                self.skt.connect((ip, self.port))
             self.skt.send(b"delete_all")
 
             # on envoie un message vide pour signifier la fin de la communication
             self.skt.send(b"")
+            if i != 0:
+                self.ports = self.ports + 1
+            else:
+                self.ports = self.port + 1
 
         # on revient se connecter à la caméra active pour pouvoir continuer d'envoyer des commandes
-        ip = self.HOSTS[self.active_camera]
-        self.skt.connect((ip[0], self.port))
+        ip = self.hosts[self.active_camera]
+        self.skt.connect((ip[0], self.ports))
         print("Deleting all files from camera!")
         self.refresh()
 

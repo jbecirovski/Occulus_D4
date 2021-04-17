@@ -49,7 +49,7 @@ def get_info_process(skt, ip, port, info_queue):
         info_queue.put((str(ip[1] + 1), str(ip[0]), str(data)))
 
 
-def get_preview_process(skt, ip, port, preview_queue):
+def get_preview_process(skt):
     while True:
         print("Getting preview")
         skt.send(b"get_preview")
@@ -79,7 +79,7 @@ def update_infos_thread(info_queue, info):
             time.sleep(5)
 
 
-def update_preview_thread(preview_queue, preview):
+def update_preview_thread(preview):
     while True:
         try:
             """image = preview_queue.get()
@@ -87,8 +87,9 @@ def update_preview_thread(preview_queue, preview):
             file = open(r"../ressource/previews.jpg", "rb")
             file.write(image)
             file.close()"""
-            preview.setPixmap(QtGui.QPixmap(r"../ressource/preview.png"))
-        except queue.Empty:
+            open(r"../station_base/preview.png", "rb")
+            preview.setPixmap(QtGui.QPixmap(r"../station_base/preview.png"))
+        except OSError:
             time.sleep(1)
 
 

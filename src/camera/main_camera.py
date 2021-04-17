@@ -1,5 +1,5 @@
 # script principal pour le fonctionnement des caméras
-
+import ftplib
 import socket
 import subprocess
 import threading
@@ -14,7 +14,7 @@ from ftplib import FTP
 
 
 # définition de la fonction pour aller lire l'image dans un process externe (non-bloquant)
-def get_preview(cam, send_to, ftp_connection):
+def get_preview(cam):
     ftp_connection = FTP('')
     ftp_connection.connect(STATION_IP, 2121)
     ftp_connection.login("user", "12345")
@@ -104,8 +104,23 @@ while True:
                         active_preview = True
                         # on crée le process pour aller faire la lecture de l'image et l'envoyer (child process)
                         print("Starting process!")
-                        read_process = Process(target=get_preview, args=(camera, connection, ftp))
-                        read_process.start()
+                        """read_process = Process(target=get_preview, args=(camera,))
+                        read_process.start()"""
+                        print(STATION_IP)
+
+                        ftp = FTP('')
+                        ftp.connect(STATION_IP, 2121)
+                        ftp.login("user", "12345")
+                        ftp.cwd("/")
+
+                        # on prend l'image
+                        cam.capture("/home/pi/preview/preview.jpg")
+                        print("Preview captured!")
+
+                        # on va sauvegarder l'image sur le serveur
+                        ftp.storbinary('STOR previews.jpg', open('/home/pi/preview/preview.jpg', 'rb'))
+                        print("Image sent")
+                        ftp.quit()
 
                     else:
                         # TODO à voir si c'est limitant
@@ -227,6 +242,7 @@ while True:
                         ftp.storbinary('STOR ' + files[i], open('/home/pi/recordings/' + files[i], 'rb'))
 
                     print("Downloading file(s)!")
+                    ftp.quit()
 
                 elif command == "download_all":
 
@@ -246,6 +262,7 @@ while True:
                         ftp.storbinary('STOR ' + files[i], open('/home/pi/recordings/' + files[i], 'rb'))
 
                     print("Downloading all files!")
+                    ftp.quit()
 
             else:
                 if command == "refresh_files":
