@@ -56,7 +56,6 @@ Pour le raspberry pi des caméras:
 	(Pour transférer le fichier main de la camera dans le Pi)
 	35- Effectuer la commande suivante pour transférer les fichiers vers le Pi -> scp "path_du_fichier"/main_camera.py pi@"ip_du_pi":/home/pi/,
 	                                                                              scp "path_du_fichier"/broadcast_camera.py pi@"ip_du_pi":/home/pi/,
-	                                                                              scp "path_du_fichier"/functions.py pi@"ip_du_pi":/home/pi/,
 	                                                                              scp "path_du_fichier"/servomotor_master.py pi@"ip_du_pi":/home/pi/,
 	                                                                              scp "path_du_fichier"/i2c_master.py pi@"ip_du_pi":/home/pi/
 

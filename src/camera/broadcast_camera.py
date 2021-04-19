@@ -1,4 +1,4 @@
-# scipt secondaire pour la gestion du broadcasting
+# script secondaire pour la gestion du broadcasting
 
 import socket
 

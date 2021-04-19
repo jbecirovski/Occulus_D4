@@ -1,51 +1,17 @@
 # script principal pour le fonctionnement des caméras
-import ftplib
 import socket
 import subprocess
-import threading
 import time
 
-import functions
 import i2c_master
 
 from picamera import PiCamera
-from multiprocessing import Process
 from ftplib import FTP
-
-
-# définition de la fonction pour aller lire l'image dans un process externe (non-bloquant)
-def get_preview(cam):
-    ftp_connection = FTP('')
-    ftp_connection.connect(STATION_IP, 2121)
-    ftp_connection.login("user", "12345")
-    ftp_connection.cwd("/")
-    while True:
-        # on prend l'image
-        cam.capture("/home/pi/preview/preview.jpg")
-        print("Preview captured!")
-
-        # on va sauvegarder l'image sur le serveur
-        ftp.storbinary('STOR previews.jpg', open('/home/pi/preview/preview.jpg', 'rb'))
-        print("Image sent")
-
-        """"# on va ouvrir l'image à envoyer
-        # TODO à revérifier si c'est correct
-        input_file = open("/home/pi/preview/preview.jpg", "rb")
-        print("File opened")
-
-        # on va lire le fichier tant qu'on n'a pas atteint la fin et on envoie l'info
-        image = input_file.read(65536)
-        while image:
-            send_to.send(image)
-            image = input_file.read(65536)
-        input_file.close()"""
-        time.sleep(0.5)
-
 
 # on définit les paramètres pour la communication socket
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.connect(("8.8.8.8", 80))
-local_ip = s.getsockname()[0]
+LOCAL_IP = s.getsockname()[0]
 s.close()
 LOCAL_PORT = 60000
 
@@ -66,27 +32,24 @@ battery_manager = i2c_master.BMSCom()
 
 # on met la camera en preview pour la préparer et on la garde afin de s'assurer qu'elle soit prête à prendre une photo
 # à n'importe quel moment
-# TODO à voir si ça affecte les performances
 camera.start_preview()
 
 # création des sockets pour la communication
-# TODO Voir si on doit le garder en blocking si plusieurs cameras ou envoie des images
 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 # binder le socket
-tcp_sock.bind((local_ip, LOCAL_PORT))
+tcp_sock.bind((LOCAL_IP, LOCAL_PORT))
 
 # écoute pour les connexions entrantes
-tcp_sock.listen()
+tcp_sock.listen(100)
 
-# déclaration de la variable pour voir si on doit envoyer ou arrêter d'envoyer les previews
-active_preview = False
+# déclaration de la variable pour voir dans quel fichier on doit sauvegarder les images (pour éviter écrasement)
+preview = False
 
 while True:
     # s'il y a connexion TCP, on l'accepte et on la traite
     connection, address = tcp_sock.accept()
-    print("Connexion établie par: ", address[0], "sur le socket ", address[1])
     STATION_IP = address[0]
     STATION_PORT = address[1]
     with connection:
@@ -95,47 +58,36 @@ while True:
             if not data:
                 break
             data = data.split("_")
-            print(data[0])
             command = data[0] + "_" + data[1]
 
             if data[0] == "get":
                 if command == "get_preview":
-                    if not active_preview:
-                        active_preview = True
-                        # on crée le process pour aller faire la lecture de l'image et l'envoyer (child process)
-                        print("Starting process!")
-                        """read_process = Process(target=get_preview, args=(camera,))
-                        read_process.start()"""
-                        print(STATION_IP)
+                    ftp = FTP('')
+                    ftp.connect(STATION_IP, 2121)
+                    ftp.login("user", "12345")
+                    ftp.cwd("/")
 
-                        ftp = FTP('')
-                        ftp.connect(STATION_IP, 2121)
-                        ftp.login("user", "12345")
-                        ftp.cwd("/")
-
+                    if not preview:
                         # on prend l'image
-                        cam.capture("/home/pi/preview/preview.jpg")
-                        print("Preview captured!")
+                        camera.capture("/home/pi/preview/preview.jpg")
 
                         # on va sauvegarder l'image sur le serveur
-                        ftp.storbinary('STOR previews.jpg', open('/home/pi/preview/preview.jpg', 'rb'))
-                        print("Image sent")
+                        ftp.storbinary('STOR preview.jpg', open('/home/pi/preview/preview.jpg', 'rb'))
                         ftp.quit()
+                        preview = True
 
                     else:
-                        # TODO à voir si c'est limitant
-                        # on attend que le process ait fini
-                        read_process.join()
-                        active_preview = False
-                        # si ça ne marche pas ou si c'est trop long, faire un read_process.terminate
+                        # on prend l'image
+                        camera.capture("/home/pi/preview/preview1.jpg")
 
-                    print("Getting preview!")
+                        # on va sauvegarder l'image sur le serveur
+                        ftp.storbinary('STOR preview.jpg', open('/home/pi/preview/preview.jpg', 'rb'))
+                        ftp.quit()
+                        preview = False
 
                 elif command == "get_infos":
-                    # battery = battery_manager.get_charge1000()
-                    battery = "50%"
-                    rep = local_ip + "," + battery
-                    print("Getting infos!")
+                    battery = battery_manager.get_charge1000()
+                    rep = LOCAL_IP + "," + battery
 
                     # on envoie la réponse à la station de base
                     connection.send(rep.encode('utf-8'))
@@ -147,16 +99,13 @@ while True:
                 cmd = "ls /home/pi/recordings/"
                 process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                 output = process.stdout.read()
-                print(output)
                 output = output.decode()
                 files = output.split("\n")
                 number = len(files)
-                camera.start_recording("/home/pi/recordings/recording" + str(number) + ".h264")
-                print("Starting camera!")
+                camera.start_recording("/home/pi/recordings/" + LOCAL_IP + "recording" + str(number) + ".h264")
 
             elif data[0] == "stop":
                 camera.stop_recording()
-                print("Stopping camera!")
 
             # référence de 45 degrés
             elif data[0] == "move":
@@ -165,17 +114,14 @@ while True:
                     if vertical <= 90:
                         cmd = "python3 servomotor_master.py 33 {}".format(str(vertical))
                         subprocess.Popen(cmd, shell=True)
-                        print("Moving up!")
                     else:
                         vertical = vertical - 5
 
-                # TODO à vérifier si ça bouge bien dans le bon sens
                 elif command == "move_right":
                     horizontal = horizontal + 5
                     if horizontal <= 90:
                         cmd = "python3 servomotor_master.py 32 {}".format(str(horizontal))
                         subprocess.Popen(cmd, shell=True)
-                        print("Moving right!")
                     else:
                         horizontal = horizontal - 5
 
@@ -184,7 +130,6 @@ while True:
                     if horizontal >= 0:
                         cmd = "python3 servomotor_master.py 32 {}".format(str(horizontal))
                         subprocess.Popen(cmd, shell=True)
-                        print("Moving left!")
                     else:
                         horizontal = horizontal + 5
 
@@ -193,7 +138,6 @@ while True:
                     if vertical >= 0:
                         cmd = "python3 servomotor_master.py 33 {}".format(str(vertical))
                         subprocess.Popen(cmd, shell=True)
-                        print("Moving down!")
                     else:
                         vertical = vertical + 5
 
@@ -209,16 +153,11 @@ while True:
                         cmd = "rm /home/pi/recordings/" + str(fichiers[i])
                         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                         output = process.stdout.read()
-                        print(output)
-                    print("Deleting file(s)!")
 
                 elif command == "delete_all":
                     cmd = "rm /home/pi/recordings/*"
                     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                     output = process.stdout.read()
-                    print(output)
-                    print("Deleting all files!")
-                    connection.shutdown(socket.SHUT_RDWR)
 
                 else:
                     break
@@ -231,17 +170,11 @@ while True:
                 ftp.cwd("/")
                 if command == "download_file":
                     files = data[2]
-                    print(files)
                     files = files.split(',')
 
                     # on crée un thread pour chaque fichier à télécharger
                     for i in range(len(files) - 1):
-                        # TODO à vérifier si ça marche
-                        # threading.Thread(target=functions.upload_file, args=('/home/pi/recordings/' + files[i],
-                                                                             #files[i], ftp)).start()
                         ftp.storbinary('STOR ' + files[i], open('/home/pi/recordings/' + files[i], 'rb'))
-
-                    print("Downloading file(s)!")
                     ftp.quit()
 
                 elif command == "download_all":
@@ -250,18 +183,11 @@ while True:
                     cmd = "ls /home/pi/recordings/"
                     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                     output = process.stdout.read().decode('utf-8')
-                    print(output)
                     files = output.split("\n")
-                    print(files)
 
                     # on crée un thread pour chaque fichier à télécharger
                     for i in range(len(files) - 1):
-                        # TODO à voir si ça marche
-                        # threading.Thread(target=functions.upload_file, args=('/home/pi/recordings/' + files[i],
-                                                                             # files[i], ftp)).start()
                         ftp.storbinary('STOR ' + files[i], open('/home/pi/recordings/' + files[i], 'rb'))
-
-                    print("Downloading all files!")
                     ftp.quit()
 
             else:
@@ -269,7 +195,6 @@ while True:
                     cmd = "ls /home/pi/recordings/"
                     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
                     output = process.stdout.read().decode()
-                    print(output)
                     files = output.split(" ")
                     names = ""
                     for i in range(len(files)):
@@ -277,13 +202,14 @@ while True:
                             names = names + files[0]
                         else:
                             names = names + "," + files[i]
-                    print("Refreshing files!")
                     rep = names
                     if rep == "":
-                        rep = "none"
+                        rep = "none,"
 
                     # on envoie la réponse à la station de base
                     connection.send(rep.encode('utf-8'))
 
                 else:
                     break
+
+    connection.close()

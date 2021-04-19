@@ -4,7 +4,12 @@ import socket
 import time
 import queue
 
+import numpy as np
+import skimage as sk
+import skimage.io as skio
+
 from PyQt5 import QtGui
+from skimage.transform import resize
 
 
 def get_wifi_ip_address():
@@ -38,14 +43,11 @@ def get_response(broadcast_queue, skt):
 def get_info_process(skt, ip, port, info_queue):
     while True:
         # pour être complémentaire à la fonction du UI (ne pas le faire 2 fois de suite en startant/changeant de camera)
+        # time.sleep(120)
         time.sleep(5)
-        # print("Getting infos")
         skt.send(b"get_infos")
         data = skt.recv(1024)
         data = data.decode('utf-8')
-        # print(data)
-        # data = "25%"
-        # print(data)
         info_queue.put((str(ip[1] + 1), str(ip[0]), str(data)))
 
 
@@ -53,47 +55,39 @@ def get_preview_process(skt):
     while True:
         print("Getting preview")
         skt.send(b"get_preview")
-        """datas = None
-        data = skt.recv(65536)
-        while data:
-            datas = datas + data
-            data = skt.recv(65536)"""
-        # on vient attendre que le premier fichier se rende sur le serveur FTP
         time.sleep(1)
-        # read_file = open(r"../ressource/regie.png", "rb")
-        # data = read_file.read()
-        # read_file.close()
-        # preview_queue.put(data)
-        # time.sleep(1)
 
 
 def update_infos_thread(info_queue, info):
     while True:
         try:
             infos = info_queue.get()
-            # print("Updating info")
-            info.setText(" Informations\n Nom de la camera: Camera " + str(infos[0]) +
-                         "\n Adresse IP: " + str(infos[1]) +
-                         "\n Batterie restante: " + str(infos[2]))
+            try:
+                battery = infos[2].split(',')
+                battery = battery[1]
+                info.setText(" Informations\n Nom de la camera: Camera " + str(infos[0]) +
+                             "\n Adresse IP: " + str(infos[1]) +
+                             "\n Batterie restante: " + str(battery))
+            except IndexError:
+                pass
         except queue.Empty:
+            # time.sleep(30)
             time.sleep(5)
 
 
 def update_preview_thread(preview):
     while True:
         try:
-            """image = preview_queue.get()
-            print("updating preview")
-            file = open(r"../ressource/previews.jpg", "rb")
+            file = open(r"../station_base/preview.jpg", "r")
+            """data = file.read()
+            file.close()
             file.write(image)
-            file.close()"""
-            open(r"../station_base/preview.png", "rb")
-            preview.setPixmap(QtGui.QPixmap(r"../station_base/preview.png"))
+            file.close()
+            data = np.asarray(data)
+            data = resize(data, (360, 640))
+            data = sk.img_as_ubyte(data)
+            skio.imsave("../station_base/good_preview.jpg", data)"""
+            preview.setPixmap(QtGui.QPixmap(r"../station_base/preview.jpg"))
         except OSError:
             time.sleep(1)
-
-
-def upload_file(file_path, file_name, ftp):
-    ftp.storbinary('STOR ' + file_name, open(file_path, 'rb'))
-    ftp.quit()
 
