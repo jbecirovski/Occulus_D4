@@ -19,7 +19,7 @@ class Window(QtWidgets.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
         self.setFixedHeight(800)
-        self.setFixedWidth(1200)
+        self.setFixedWidth(1400)
         self.setWindowTitle("Application Camera")
         self.setWindowIcon(QtGui.QIcon(r"../ressource/protolabLogo.png"))
 
@@ -104,7 +104,7 @@ class Window(QtWidgets.QMainWindow):
     def create_ui(self):
         self.btn_quit.clicked.connect(self.close_application)
         self.btn_quit.resize(200, 100)
-        self.btn_quit.move(980, 680)
+        self.btn_quit.move(1180, 680)
 
         self.camera_combo_box.move(20, 50)
         self.camera_combo_box.activated.connect(self.choose_camera)
@@ -138,37 +138,37 @@ class Window(QtWidgets.QMainWindow):
         self.btn_stop_all_camera.move(20, 720)
 
         self.btn_up_arrow.setArrowType(QtCore.Qt.UpArrow)
-        self.btn_up_arrow.setGeometry(1060, 500, 30, 30)
+        self.btn_up_arrow.setGeometry(1260, 500, 30, 30)
         self.btn_up_arrow.clicked.connect(self.up_arrow)
         self.moveup_key.activated.connect(self.up_arrow)
 
         self.btn_left_arrow.setArrowType(QtCore.Qt.LeftArrow)
-        self.btn_left_arrow.setGeometry(1005, 550, 30, 30)
+        self.btn_left_arrow.setGeometry(1205, 550, 30, 30)
         self.btn_left_arrow.clicked.connect(self.left_arrow)
         self.moveleft_key.activated.connect(self.left_arrow)
 
         self.btn_right_arrow.setArrowType(QtCore.Qt.RightArrow)
-        self.btn_right_arrow.setGeometry(1115, 550, 30, 30)
+        self.btn_right_arrow.setGeometry(1315, 550, 30, 30)
         self.btn_right_arrow.clicked.connect(self.right_arrow)
         self.moveright_key.activated.connect(self.right_arrow)
 
         self.btn_down_arrow.setArrowType(QtCore.Qt.DownArrow)
-        self.btn_down_arrow.setGeometry(1060, 600, 30, 30)
+        self.btn_down_arrow.setGeometry(1260, 600, 30, 30)
         self.btn_down_arrow.clicked.connect(self.down_arrow)
         self.movedown_key.activated.connect(self.down_arrow)
 
         self.info.setStyleSheet("border: 2px solid grey;")
         self.info.resize(200, 100)
-        self.info.move(950, 50)
+        self.info.move(1180, 50)
 
-        self.preview.move(200, 100)
-        self.preview.resize(700, 600)
+        self.preview.move(180, 100)
+        self.preview.resize(960, 540)
         self.preview.setAlignment(QtCore.Qt.AlignCenter)
         self.preview.setPixmap(QtGui.QPixmap(r"../ressource/protolabLogo.png"))
         self.preview.setStyleSheet("border: 2px solid grey;")
 
         self.preview_button.setText("Start preview")
-        self.preview_button.move(490, 720)
+        self.preview_button.move(600, 720)
         self.preview_button.resize(120, 60)
         self.preview_button.clicked.connect(self.start_stop_preview)
 

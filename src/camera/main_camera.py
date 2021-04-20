@@ -21,7 +21,9 @@ STATION_PORT = 0
 
 # déclaration de l'objet caméra pour effectuer les opérations
 camera = PiCamera()
-camera.resolution = (1920, 1080)
+
+# on met la résolution comme ça pour les previews pour ne pas avoir à la changer à chaque call
+camera.resolution = (960, 540)
 camera.framerate = 30
 
 # déclaration des variables pour tenir compte des déplacements de la caméra
@@ -86,7 +88,8 @@ while True:
                         preview = False
 
                 elif command == "get_infos":
-                    battery = battery_manager.get_charge1000()
+                    # battery = battery_manager.get_charge1000()
+                    battery = "50%"
                     rep = LOCAL_IP + "," + battery
 
                     # on envoie la réponse à la station de base
@@ -102,10 +105,12 @@ while True:
                 output = output.decode()
                 files = output.split("\n")
                 number = len(files)
+                camera.resolution = (1920, 1080)
                 camera.start_recording("/home/pi/recordings/" + LOCAL_IP + "recording" + str(number) + ".h264")
 
             elif data[0] == "stop":
                 camera.stop_recording()
+                camera.resolution = (960, 540)
 
             # référence de 45 degrés
             elif data[0] == "move":

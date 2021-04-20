@@ -4,12 +4,7 @@ import socket
 import time
 import queue
 
-import numpy as np
-import skimage as sk
-import skimage.io as skio
-
 from PyQt5 import QtGui
-from skimage.transform import resize
 
 
 def get_wifi_ip_address():
@@ -43,8 +38,7 @@ def get_response(broadcast_queue, skt):
 def get_info_process(skt, ip, port, info_queue):
     while True:
         # pour être complémentaire à la fonction du UI (ne pas le faire 2 fois de suite en startant/changeant de camera)
-        # time.sleep(120)
-        time.sleep(5)
+        time.sleep(120)
         skt.send(b"get_infos")
         data = skt.recv(1024)
         data = data.decode('utf-8')
@@ -71,22 +65,13 @@ def update_infos_thread(info_queue, info):
             except IndexError:
                 pass
         except queue.Empty:
-            # time.sleep(30)
-            time.sleep(5)
+            time.sleep(30)
 
 
 def update_preview_thread(preview):
     while True:
         try:
             file = open(r"../station_base/preview.jpg", "r")
-            """data = file.read()
-            file.close()
-            file.write(image)
-            file.close()
-            data = np.asarray(data)
-            data = resize(data, (360, 640))
-            data = sk.img_as_ubyte(data)
-            skio.imsave("../station_base/good_preview.jpg", data)"""
             preview.setPixmap(QtGui.QPixmap(r"../station_base/preview.jpg"))
         except OSError:
             time.sleep(1)
