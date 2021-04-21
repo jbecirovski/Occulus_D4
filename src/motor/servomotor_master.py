@@ -25,5 +25,6 @@ def setAngle(angle):
 
 
 setAngle(args.angle)
-pwm.stop
+# TODO correction de code, à voir si ça continue de marcher
+pwm.stop()
 GPIO.cleanup()
