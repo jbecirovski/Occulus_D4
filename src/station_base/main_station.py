@@ -34,23 +34,28 @@ class Window(QtWidgets.QMainWindow):
 
         # initialisation des variables constantes
         self.hosts = []
-        self.TCP_PORT = 60000
+        self.CAMERA_PORT = 60000
+        self.COMM_PORT = 61000
         self.BROADCAST_IP = "255.255.255.255"
         self.BROADCAST_PORT = 12345
 
         # initialisation de la variable pour l'envoi de preview
         self.active_preview = False
 
-        # création du socket de communication (BLOCKING for now)
-        self.tcp_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.tcp_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # création du socket de communication pour la gestion de la caméra
+        self.camera_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.camera_skt_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        # création du socket de communication pour la gestion des autres commandes de la caméra
+        self.comm_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.comm_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         # création du socket UDP pour le broadcasting
         self.udp_skt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_skt.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        # on envoie un message avec le socket UDP pour l'initialiser
+        # on envoie un message bidon avec le socket UDP pour l'initialiser
         self.udp_skt.sendto(b"enabling socket", ("192.168.0.0", self.BROADCAST_PORT))
 
         # déclaration des différents composants de l'interface graphique
@@ -203,14 +208,15 @@ class Window(QtWidgets.QMainWindow):
             time.sleep(0.5)
 
         ip = self.hosts[self.active_camera][0]
-        self.tcp_skt.connect((ip, self.TCP_PORT))
+        self.camera_skt.connect((ip, self.CAMERA_PORT))
+        self.comm_skt.connect((ip, self.COMM_PORT))
 
         # va chercher les infos de la caméra par défaut
         self.get_infos()
 
         # créer le process pour aller chercher les infos de la caméra
         self.info_process = Process(target=src.other.functions.get_info_process,
-                                    args=(self.tcp_skt, self.hosts[self.active_camera], self.TCP_PORT, self.info_queue,))
+                                    args=(self.comm_skt, self.hosts[self.active_camera], self.COMM_PORT, self.info_queue,))
         self.info_process.start()
 
         # starter le thread pour aller updater l'info de la caméra
@@ -223,13 +229,14 @@ class Window(QtWidgets.QMainWindow):
 
     # méthodes de classe
     def start_stop_preview(self):
-        self.tcp_skt.send(b"get_preview")
+        self.camera_skt_skt.send(b"get_preview")
         if self.active_preview:
             self.active_preview = False
             self.preview_button.setText("Start preview")
 
             # stop le process pour aller chercher les images de preview
             self.preview_process.terminate()
+            # TODO À voir si ça plante à cause du timeout
             self.preview_process.join(1)
 
         else:
@@ -237,7 +244,7 @@ class Window(QtWidgets.QMainWindow):
             self.preview_button.setText("Stop preview")
 
             # start le process pour aller chercher les images de preview
-            self.preview_process = Process(target=src.other.functions.get_preview_process, args=(self.tcp_skt,))
+            self.preview_process = Process(target=src.other.functions.get_preview_process, args=(self.camera_skt,))
             self.preview_process.start()
 
     def choose_camera(self):
@@ -245,18 +252,23 @@ class Window(QtWidgets.QMainWindow):
         if new_active_camera != self.active_camera:
             self.active_camera = new_active_camera
 
-            # on vient fermer la connexion en cours et on en redémarre une avec la bonne caméra
-            self.tcp_skt.send(b"")
-            self.tcp_skt.shutdown(socket.SHUT_RDWR)
-            self.tcp_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.tcp_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.tcp_skt.connect((str(self.hosts[self.active_camera][0]), self.TCP_PORT))
+            # on vient fermer les connexions en cours et on les redémarrent avec la bonne caméra
+            self.camera_skt.send(b"")
+            self.camera_skt.shutdown(socket.SHUT_RDWR)
+            self.camera_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.camera_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.camera_skt.connect((str(self.hosts[self.active_camera][0]), self.CAMERA_PORT_PORT))
+            self.comm_skt.send(b"")
+            self.comm_skt.shutdown(socket.SHUT_RDWR)
+            self.comm_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.comm_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.comm_skt.connect((str(self.hosts[self.active_camera][0]), self.COMM_PORT))
             self.get_infos()
 
             # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
             self.info_process.terminate()
             self.info_process = Process(target=src.other.functions.get_info_process,
-                                        args=(self.tcp_skt, self.hosts[new_active_camera], self.TCP_PORT, self.info_queue,))
+                                        args=(self.comm_skt, self.hosts[new_active_camera], self.COMM_PORT, self.info_queue,))
             self.info_process.start()
         else:
             pass
@@ -290,45 +302,45 @@ class Window(QtWidgets.QMainWindow):
                 self.camera_combo_box.addItem("Camera " + str(i + 1))
 
     def start_camera(self):
-        self.tcp_skt.send(b"start_camera")
+        self.camera_skt.send(b"start_camera")
 
     def stop_camera(self):
-        self.tcp_skt.send(b"stop_camera")
+        self.camera_skt.send(b"stop_camera")
 
     def start_cameras(self):
         if len(self.hosts) == 1:
-            self.tcp_skt.send(b"start_camera")
+            self.camera_skt.send(b"start_camera")
         else:
             for i in range(len(self.hosts)):
                 if i == 0:
-                    self.tcp_skt.send(b"start_camera")
+                    self.camera_skt.send(b"start_camera")
                 else:
                     ip = self.hosts[i][0]
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                    s.connect((ip, self.TCP_PORT))
+                    s.connect((ip, self.CAMERA_PORT))
                     s.send(b"start_camera")
                     s.send(b"")
                     s.shutdown(socket.SHUT_RDWR)
 
     def stop_cameras(self):
         if len(self.hosts) == 1:
-            self.tcp_skt.send(b"stop_camera")
+            self.camera_skt.send(b"stop_camera")
         else:
             for i in range(len(self.hosts)):
                 if i == 0:
-                    self.tcp_skt.send(b"stop_camera")
+                    self.camera_skt.send(b"stop_camera")
                 else:
                     ip = self.hosts[i][0]
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                    s.connect((ip, self.TCP_PORT))
+                    s.connect((ip, self.CAMERA_PORT))
                     s.send(b"stop_camera")
                     s.send(b"")
                     s.shutdown(socket.SHUT_RDWR)
 
     def manage_files(self):
-        self.fileWindow = FileWindow(self.active_camera, self.tcp_skt, self.hosts[self.active_camera], self.TCP_PORT,
+        self.fileWindow = FileWindow(self.active_camera, self.comm_skt, self.hosts[self.active_camera], self.COMM_PORT,
                                      self.hosts, self.active_camera)
         if self.fileWindow.isVisible():
             self.fileWindow.hide()
@@ -339,8 +351,10 @@ class Window(QtWidgets.QMainWindow):
         choice = QtWidgets.QMessageBox.question(self, "Extract!", "Are you sure you want to quit",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if choice == QtWidgets.QMessageBox.Yes:
-            self.tcp_skt.send(b'')
-            src.other.functions.close_port(self.tcp_skt)
+            self.comm.send(b"")
+            self.camera_skt.send(b"")
+            src.other.functions.close_port(self.comm_skt)
+            src.other.functions.close_port(self.camera_skt)
             self.info_process.terminate()
             self.info_process.join()
 
@@ -359,28 +373,28 @@ class Window(QtWidgets.QMainWindow):
         self.close_application()
 
     def up_arrow(self):
-        self.tcp_skt.send(b"move_up")
+        self.comm_skt.send(b"move_up")
 
     def right_arrow(self):
-        self.tcp_skt.send(b"move_right")
+        self.comm_skt.send(b"move_right")
 
     def left_arrow(self):
-        self.tcp_skt.send(b"move_left")
+        self.comm_skt.send(b"move_left")
 
     def down_arrow(self):
-        self.tcp_skt.send(b"move_down")
+        self.comm_skt.send(b"move_down")
 
     def get_infos(self):
-        self.tcp_skt.send(b"get_infos")
-        data = self.tcp_skt.recv(1024)
+        self.comm_skt.send(b"get_infos")
+        data = self.comm_skt.recv(1024)
         data = data.decode('utf-8')
         data = data.split(',')
-        percent = data[1]
+        battery = data[1]
         # update le label d'infos
         cam = self.hosts[self.active_camera]
         self.info.setText(" Informations\n Nom de la camera: Camera " + str(cam[1] + 1) +
                           "\n Adresse IP: " + str(cam[0]) +
-                          "\n Batterie restante: " + percent)
+                          "\n Batterie restante: " + battery)
 
     def remove(self):
         if len(self.hosts) > 1:
@@ -396,18 +410,23 @@ class Window(QtWidgets.QMainWindow):
                 self.hosts[i] = (ip, num)
             self.active_camera = self.hosts[0][1]
 
-            # on vient fermer la connexion en cours et on en redémarre une avec la bonne caméra
-            self.tcp_skt.send(b"")
-            self.tcp_skt.shutdown(socket.SHUT_RDWR)
-            self.tcp_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.tcp_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.tcp_skt.connect((str(self.hosts[self.active_camera][0]), self.TCP_PORT))
+            # on vient fermer les connexions en cours et on les redémarrent avec la bonne caméra
+            self.camera_skt.send(b"")
+            self.camera_skt.shutdown(socket.SHUT_RDWR)
+            self.camera_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.camera_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.camera_skt.connect((str(self.hosts[self.active_camera][0]), self.CAMERA_PORT_PORT))
+            self.comm_skt.send(b"")
+            self.comm_skt.shutdown(socket.SHUT_RDWR)
+            self.comm_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.comm_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.comm_skt.connect((str(self.hosts[self.active_camera][0]), self.COMM_PORT))
             self.get_infos()
 
             # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
             self.info_process.terminate()
             self.info_process = Process(target=src.other.functions.get_info_process,
-                                        args=(self.tcp_skt, self.hosts[self.active_camera], self.TCP_PORT, self.info_queue,))
+                                        args=(self.comm_skt, self.hosts[self.active_camera], self.COMM_PORT, self.info_queue,))
             self.info_process.start()
 
 

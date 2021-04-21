@@ -1,4 +1,5 @@
-# script principal pour le fonctionnement des caméras
+# script principal pour le fonctionnement des caméras (enregistrement et preview)
+
 import socket
 import subprocess
 import time
@@ -8,6 +9,18 @@ import RPi.GPIO as GPIO
 
 from picamera import PiCamera
 from ftplib import FTP
+
+
+# on vient débuté le script secondaire et le script de broadcast
+cmd = "python3 secondary_camera.py &"
+subprocess.Popen(cmd, shell=True)
+
+# on lui laisse un peu de temps pour s'assurer que tout soit correct
+time.sleep(1)
+
+cmd = "python3 broadcast_camera.py &"
+subprocess.Popen(cmd, shell=True)
+time.sleep(1)
 
 # on définit les paramètres pour la communication socket
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -27,17 +40,11 @@ camera = PiCamera()
 camera.resolution = (960, 540)
 camera.framerate = 30
 
-# déclaration des variables pour tenir compte des déplacements de la caméra
-horizontal = 45
-vertical = 45
-
-battery_manager = i2c_master.BMSCom()
-
 # on met la camera en preview pour la préparer et on la garde afin de s'assurer qu'elle soit prête à prendre une photo
 # à n'importe quel moment
 camera.start_preview()
 
-# création des sockets pour la communication
+# création du sockets pour la communication
 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 tcp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
@@ -104,16 +111,6 @@ while True:
                         ftp.quit()
                         preview = False
 
-                elif command == "get_infos":
-                    # battery = battery_manager.get_charge1000()
-                    battery = "50%"
-                    rep = LOCAL_IP + "," + battery
-
-                    # on envoie la réponse à la station de base
-                    connection.send(rep.encode('utf-8'))
-                else:
-                    break
-
             elif data[0] == "start":
                 # on va chercher le nombre de fichier dans le dossier recordings
                 cmd = "ls /home/pi/recordings/"
@@ -129,109 +126,7 @@ while True:
                 camera.stop_recording()
                 camera.resolution = (960, 540)
 
-            # référence de 45 degrés
-            elif data[0] == "move":
-                if command == "move_up":
-                    vertical = vertical + 5
-                    if vertical <= 90:
-                        cmd = "python3 servomotor_master.py 33 {}".format(str(vertical))
-                        subprocess.Popen(cmd, shell=True)
-                    else:
-                        vertical = vertical - 5
-
-                elif command == "move_right":
-                    horizontal = horizontal + 5
-                    if horizontal <= 90:
-                        cmd = "python3 servomotor_master.py 32 {}".format(str(horizontal))
-                        subprocess.Popen(cmd, shell=True)
-                    else:
-                        horizontal = horizontal - 5
-
-                elif command == "move_left":
-                    horizontal = horizontal - 5
-                    if horizontal >= 0:
-                        cmd = "python3 servomotor_master.py 32 {}".format(str(horizontal))
-                        subprocess.Popen(cmd, shell=True)
-                    else:
-                        horizontal = horizontal + 5
-
-                elif command == "move_down":
-                    vertical = vertical - 5
-                    if vertical >= 0:
-                        cmd = "python3 servomotor_master.py 33 {}".format(str(vertical))
-                        subprocess.Popen(cmd, shell=True)
-                    else:
-                        vertical = vertical + 5
-
-                else:
-                    break
-
-            elif data[0] == "delete":
-                if command == "delete_file":
-                    # on va chercher les différents fichiers à supprimer
-                    fichiers = data[2]
-                    fichiers = fichiers.split(',')
-                    for i in range(len(fichiers) - 1):
-                        cmd = "rm /home/pi/recordings/" + str(fichiers[i])
-                        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-                        output = process.stdout.read()
-
-                elif command == "delete_all":
-                    cmd = "rm /home/pi/recordings/*"
-                    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-                    output = process.stdout.read()
-
-                else:
-                    break
-
-            elif data[0] == "download":
-                # on vient établir la connection
-                ftp = FTP('')
-                ftp.connect(STATION_IP, 2121)
-                ftp.login("user", "12345")
-                ftp.cwd("/")
-                if command == "download_file":
-                    files = data[2]
-                    files = files.split(',')
-
-                    # on crée un thread pour chaque fichier à télécharger
-                    for i in range(len(files) - 1):
-                        ftp.storbinary('STOR ' + files[i], open('/home/pi/recordings/' + files[i], 'rb'))
-                    ftp.quit()
-
-                elif command == "download_all":
-
-                    # on va chercher le nombre de fichiers totaux à downloader
-                    cmd = "ls /home/pi/recordings/"
-                    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-                    output = process.stdout.read().decode('utf-8')
-                    files = output.split("\n")
-
-                    # on crée un thread pour chaque fichier à télécharger
-                    for i in range(len(files) - 1):
-                        ftp.storbinary('STOR ' + files[i], open('/home/pi/recordings/' + files[i], 'rb'))
-                    ftp.quit()
-
             else:
-                if command == "refresh_files":
-                    cmd = "ls /home/pi/recordings/"
-                    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-                    output = process.stdout.read().decode()
-                    files = output.split(" ")
-                    names = ""
-                    for i in range(len(files)):
-                        if i == 0:
-                            names = names + files[0]
-                        else:
-                            names = names + "," + files[i]
-                    rep = names
-                    if rep == "":
-                        rep = "none,"
-
-                    # on envoie la réponse à la station de base
-                    connection.send(rep.encode('utf-8'))
-
-                else:
-                    break
+                break
 
     connection.close()
