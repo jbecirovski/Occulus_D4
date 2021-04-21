@@ -69,7 +69,7 @@ subprocess.Popen(cmd, shell=True)
 time.sleep(1)
 
 # on vient ouvrir la LED verte pour dire que la caméra est prête à enregistrer
-GPIO.setmode(GPIO.board)
+GPIO.setmode(GPIO.BOARD)
 GPIO.setup(36, GPIO.OUT)
 GPIO.output(36, GPIO.HIGH)
 
