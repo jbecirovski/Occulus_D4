@@ -2,8 +2,9 @@
 import socket
 import subprocess
 import time
-
 import i2c_master
+
+import RPi.GPIO as GPIO
 
 from picamera import PiCamera
 from ftplib import FTP
@@ -48,6 +49,22 @@ tcp_sock.listen(100)
 
 # déclaration de la variable pour voir dans quel fichier on doit sauvegarder les images (pour éviter écrasement)
 preview = False
+
+# on vient centrer la caméra pour être sûr qu'elle soit centrée au commencement
+cmd = "python3 servomotor_master.py 33 45"
+subprocess.Popen(cmd, shell=True)
+
+time.sleep(1)
+
+cmd = "python3 servomotor_master.py 32 45"
+subprocess.Popen(cmd, shell=True)
+
+time.sleep(1)
+
+# on vient ouvrir la LED verte pour dire que la caméra est prête à enregistrer
+GPIO.setmode(GPIO.board)
+GPIO.setup(36, GPIO.OUT)
+GPIO.output(36, GPIO.HIGH)
 
 while True:
     # s'il y a connexion TCP, on l'accepte et on la traite
