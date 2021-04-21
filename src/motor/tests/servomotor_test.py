@@ -4,6 +4,7 @@ import subprocess
 import time
 
 
+# centrer la caméra
 cmd = "python3 servomotor_master.py 33 45"
 subprocess.Popen(cmd, shell=True)
 
