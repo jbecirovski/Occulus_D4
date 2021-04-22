@@ -15,7 +15,6 @@ PORT = 8000
 skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-# TODO À voir si ça affecte les performances lors de l'envoi de gros fichiers (images)
 # bind a port so the host always use the same port(to avoid creating too many different ports)
 skt.bind((localIP, 61515))
 

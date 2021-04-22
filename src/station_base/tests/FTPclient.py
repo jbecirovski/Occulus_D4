@@ -3,7 +3,7 @@ from ftplib import FTP
 
 
 def upload_file():  # pas nécessaire si on va directement dans le bon path (disons recordings)
-    file_path = r"../../ressource/512MB.zip"  # replace with path of file
+    file_path = r"../ressource/512MB.zip"  # replace with path of file
     file_name = "file.zip"  # replace with the name you want the file to have on server
     ftp.storbinary('STOR ' + file_name, open(file_path, 'rb'))
     ftp.quit()

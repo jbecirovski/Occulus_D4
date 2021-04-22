@@ -68,6 +68,9 @@ subprocess.Popen(cmd, shell=True)
 
 time.sleep(1)
 
+# on vient garder en mémoire si on est connecter au serveur FTP on non pour les previews
+is_connected = False
+
 # on vient ouvrir la LED verte pour dire que la caméra est prête à enregistrer
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(36, GPIO.OUT)
@@ -93,7 +96,69 @@ while True:
                     ftp.login("user", "12345")
                     ftp.cwd("/")
 
+                    camera.capture("/home/pi/preview/preview.jpg")
+
+                    try:
+                        image = open("/home/pi/preview/preview.jpg", 'rb')
+                        ftp.storbinary("STOR preview.jpg", image)
+                        ftp.close()
+                    except Exception as e:
+                        print(e)
+                        """if not is_connected:
+                        # on vient se connecter au serveur FTP
+                        ftp = FTP('')
+                        ftp.connect(STATION_IP, 2121)
+                        ftp.login("user", "12345")
+                        ftp.cwd("/")
+                        is_connected = True
+
                     if not preview:
+                        # on prend l'image
+                        camera.capture("/home/pi/preview/preview.jpg")
+
+                        try:
+                            image = open("/home/pi/preview/preview.jpg", 'rb')
+                            ftp.storbinary("STOR preview.jpg", image)
+                            preview = True
+
+                        except Exception as e:
+                            print("Erreur: {}".format(e))
+                            try:
+                                # si erreur, on se déconnecte et on réessaie de se connecter
+                                ftp.close()
+                                ftp = FTP('')
+                                ftp.connect(STATION_IP, 2121)
+                                ftp.login("user", "12345")
+                                ftp.cwd("/")
+                            except Exception as f:
+                                print("Erreurs: {} et {}".format(e, f))
+
+                    else:
+                        # on prend l'image
+                        camera.capture("/home/pi/preview/preview1.jpg")
+
+                        try:
+                            image = open("/home/pi/preview/preview.jpg", 'rb')
+                            ftp.storbinary("STOR preview1.jpg", image)
+                            preview = False
+
+                        except Exception as e:
+                            print("Erreur: {}".format(e))
+                            try:
+                                # si erreur, on se déconnecte et on réessaie de se connecter
+                                ftp.close()
+                                ftp = FTP('')
+                                ftp.connect(STATION_IP, 2121)
+                                ftp.login("user", "12345")
+                                ftp.cwd("/")
+                            except Exception as f:
+                                print("Erreurs: {} et {}".format(e, f))
+
+                else:
+                    ftp.close()
+                    is_connected = False"""
+
+                    """if not preview:
                         # on prend l'image
                         camera.capture("/home/pi/preview/preview.jpg")
 
@@ -107,9 +172,10 @@ while True:
                         camera.capture("/home/pi/preview/preview1.jpg")
 
                         # on va sauvegarder l'image sur le serveur
-                        ftp.storbinary('STOR preview.jpg', open('/home/pi/preview/preview.jpg', 'rb'))
+                        ftp.storbinary('STOR preview1.jpg', open('/home/pi/preview/preview1.jpg', 'rb'))
                         ftp.quit()
-                        preview = False
+
+                        preview = False"""
 
             elif data[0] == "start":
                 # on va chercher le nombre de fichier dans le dossier recordings

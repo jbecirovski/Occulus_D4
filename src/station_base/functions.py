@@ -49,7 +49,7 @@ def get_preview_process(skt):
     while True:
         print("Getting preview")
         skt.send(b"get_preview")
-        time.sleep(1)
+        time.sleep(2)
 
 
 def update_infos_thread(info_queue, info):
@@ -68,11 +68,27 @@ def update_infos_thread(info_queue, info):
             time.sleep(30)
 
 
-def update_preview_thread(preview):
+"""def update_preview_thread(preview, path):
+    prev = False
+    while True:
+        if not prev:
+            try:
+                file = open("{}/preview.jpg".format(path), "r")
+                preview.setPixmap(QtGui.QPixmap("{}/preview.jpg".format(path)))
+                prev = True
+            except OSError:
+                time.sleep(1)
+        else:
+            try:
+                file = open("{}/preview1.jpg".format(path), "r")
+                preview.setPixmap(QtGui.QPixmap("{}/preview1.jpg".format(path)))
+                prev = False
+            except OSError:
+                time.sleep(1)
     while True:
         try:
-            file = open(r"../station_base/preview.jpg", "r")
-            preview.setPixmap(QtGui.QPixmap(r"../station_base/preview.jpg"))
-        except OSError:
-            time.sleep(1)
+            file = open("{}/preview.jpg".format(path), "rb")
+            preview.setPixmap(QtGui.QPixmap("{}/preview.jpg".format(path)))
+        except OSError as e:
+            time.sleep(1)"""
 
