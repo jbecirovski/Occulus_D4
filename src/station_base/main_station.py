@@ -7,6 +7,7 @@ import threading
 import time
 import functions
 import pathlib
+import thread_camera
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
@@ -92,7 +93,7 @@ class Window(QtWidgets.QMainWindow):
 
         # déclaration des threads pour faire du aller updater le UI
         self.info_thread = threading.Thread()
-        # self.preview_thread = threading.Thread()
+        self.preview_thread = thread_camera.CameraTask(args=(self.preview, self.camera_skt,))
 
         # création du thread pour aller chercher les réponses du broadcast UDP
         self.broadcast_thread = threading.Thread()
@@ -229,8 +230,7 @@ class Window(QtWidgets.QMainWindow):
         self.info_thread = threading.Thread(target=functions.update_infos_thread,
                                             args=(self.info_queue, self.info,), daemon=True).start()
 
-        """self.preview_thread = threading.Thread(target=functions.update_preview_thread,
-                                               args=(self.preview, self.path), daemon=True).start()"""
+        self.preview_thread.start()
 
     # méthodes de classe
     def start_stop_preview(self):

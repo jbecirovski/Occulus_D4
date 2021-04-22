@@ -5,6 +5,8 @@ import time
 import subprocess
 import i2c_master
 
+import RPi.GPIO as GPIO
+
 from picamera import PiCamera
 
 camera = PiCamera()
@@ -50,6 +52,11 @@ count = 0
 # on vient initialiser les thread pour écrire la charge dans le fichier et bouger les moteurs
 threading.Thread(target=write_file, args=(battery_manager,), daemon=True)
 threading.Thread(target=move_motor, args=(), daemon=True)
+
+# on vient ouvrir la LED verte pour dire que la caméra est prête à enregistrer
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(36, GPIO.OUT)
+GPIO.output(36, GPIO.HIGH)
 
 # on vient démarrer la caméra
 camera.start_recording("/home/pi/test_longevite.h264")
