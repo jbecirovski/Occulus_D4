@@ -12,7 +12,7 @@ Pour le raspberry pi des caméras:
 	8- Attendre que la configuration soit terminée et cliquer sur Finish
 	8- Reboot (et se reconnecter par SSH)
 	9- Aller ouvrir le fichier pour pouvoir aller l'éditer (sudo nano /etc/wpa_supplicant/wpa_supplicant.conf)
-    10- Ajouter une section network={} et dans celle-ci aller ajouter les informations d'un réseau ayant accès à Internet pour la fin de la configuration (ssid="nom du réseau" et psk="mot de passe du réseau")
+    10- Ajouter une section network={} et dans celle-ci aller ajouter les informations d'un réseau ayant accès à Internet pour la fin de la configuration (ssid="nom du réseau" et psk="mot de passe du réseau", faire ctrl+o pour sauvegarder et ctrl+x pour quitter l'éditeur)
     11- Faire un reboot du pi pour qu'il puisse se connecter au réseau Wi-Fi (sudo reboot et se reconnecter par SSH)
     12- Vérifier que le pi est bien connecté au réseau en allant voir l'adresse ip de wlan0 en faisant la commande ifconfig
 
@@ -60,11 +60,18 @@ Pour le raspberry pi des caméras:
 	                                                                              scp "path_du_fichier"/servomotor_master.py pi@"ip_du_pi":/home/pi/,
 	                                                                              scp "path_du_fichier"/i2c_master.py pi@"ip_du_pi":/home/pi/
 
-	# TODO rajouter le fait de faire runner les scripts broadcast_camera.py et main_camera au boot
-
     36- Refaire les mêmes étapes que plus haut afin de venir changer les informations de la connexion Wi-Fi à celle du router du projet (sudo nano /etc/wpa_supplicant/wpa_supplicant.conf, ssid="Protolab_2.4GHz" psk="Occulus2.4")
     37- Faire un reboot du pi pour qu'il puisse se connecter au nouveau réseau (ne pas oublier de brancher le router)
     38- Pour tester que le pi est bien connecté au réseau, il est possible de connecter un ordinateur sur ce réseau et utiliser un logiciel comme Angry IP Scanner pour détecter si le pi est bien connecté sur le réseau
+
+    Pour faire fonctionner automatiquement le scrit lors du boot de la caméra, voici les étapes à suivre
+    39- Ce rendre dans les configurations du Pi (sudo raspi-config)
+    40- Sélectionner System Options
+    41- Sélectionner S5 Boot / Auto Login
+    42- Sélectionner B2 Console Autologin
+    43- Faire la commande suivant pour aller modifier le ficher profile sudo nano /etc/profile
+    44- Aller rajouter à la fin la ligne suivante: sudo python3 /home/pi/main_camera.py &
+    45- Faire un reboot du pi et lancer l'application pour voir si la caméra est détectée
 
 Pour le router (rien de bien spécial):
 	1- Se connecter dans le router (aucun mot de passe au début)
