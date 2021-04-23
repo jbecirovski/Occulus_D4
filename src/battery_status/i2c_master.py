@@ -11,7 +11,7 @@ from smbus2 import SMBus
 
 class BMSCom:
 
-    def __int__(self):
+    def __init__(self):
         self._bus = SMBus(1)  # indicates /dev/ic2-1
         self.address = 0x0B  # bus address of the battery status manager
         self.polynomial = '100000111'  # PEC checksum polynomial binary 0x107 (CRC-8)
