@@ -1,5 +1,6 @@
 # script pour le fonctionnement de la station de base
 
+import os
 import socket
 import subprocess
 import sys
@@ -93,7 +94,7 @@ class Window(QtWidgets.QMainWindow):
 
         # déclaration des threads pour faire du aller updater le UI
         self.info_thread = threading.Thread()
-        self.preview_thread = thread_camera.CameraTask(args=(self.preview, self.camera_skt,))
+        self.preview_thread = None
 
         # création du thread pour aller chercher les réponses du broadcast UDP
         self.broadcast_thread = threading.Thread()
@@ -230,54 +231,56 @@ class Window(QtWidgets.QMainWindow):
         self.info_thread = threading.Thread(target=functions.update_infos_thread,
                                             args=(self.info_queue, self.info,), daemon=True).start()
 
-        self.preview_thread.start()
-
     # méthodes de classe
     def start_stop_preview(self):
-        self.camera_skt.send(b"get_preview")
-        time.sleep(1)
-        self.preview.setPixmap(QtGui.QPixmap("{}/preview.jpg".format(self.path)))
-        """if self.active_preview:
+        if self.active_preview:
             self.active_preview = False
             self.preview_button.setText("Start preview")
-
-            # stop le process pour aller chercher les images de preview
-            self.preview_process.terminate()
-            self.preview_process.join(1)
+            self.preview_thread.stop()
+            time.sleep(1)
+            self.preview.setPixmap(QtGui.QPixmap("{}/ressource/protolabLogo.png".format(self.path)))
+            self.preview_thread = None
+            os.remove("{}/preview.jpg".format(self.path))
 
         else:
+            self.preview_thread = thread_camera.CameraTask(args=(self.preview, self.camera_skt, self.path,))
             self.active_preview = True
             self.preview_button.setText("Stop preview")
-
-            # start le process pour aller chercher les images de preview
-            self.preview_process = Process(target=functions.get_preview_process, args=(self.camera_skt,))
-            self.preview_process.start()"""
+            self.preview_thread.start()
 
     def choose_camera(self):
-        new_active_camera = self.camera_combo_box.currentIndex()
-        if new_active_camera != self.active_camera:
-            self.active_camera = new_active_camera
+        if not self.active_preview:
+            new_active_camera = self.camera_combo_box.currentIndex()
+            if new_active_camera != self.active_camera:
+                self.active_camera = new_active_camera
 
-            # on vient fermer les connexions en cours et on les redémarrent avec la bonne caméra
-            self.camera_skt.send(b"")
-            self.camera_skt.shutdown(socket.SHUT_RDWR)
-            self.camera_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.camera_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.camera_skt.connect((str(self.hosts[self.active_camera][0]), self.CAMERA_PORT_PORT))
-            self.comm_skt.send(b"")
-            self.comm_skt.shutdown(socket.SHUT_RDWR)
-            self.comm_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.comm_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.comm_skt.connect((str(self.hosts[self.active_camera][0]), self.COMM_PORT))
-            self.get_infos()
+                # on vient fermer les connexions en cours et on les redémarrent avec la bonne caméra
+                self.camera_skt.send(b"")
+                self.camera_skt.shutdown(socket.SHUT_RDWR)
+                self.camera_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.camera_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.camera_skt.connect((str(self.hosts[self.active_camera][0]), self.CAMERA_PORT))
+                self.comm_skt.send(b"")
+                self.comm_skt.shutdown(socket.SHUT_RDWR)
+                self.comm_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.comm_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.comm_skt.connect((str(self.hosts[self.active_camera][0]), self.COMM_PORT))
+                self.get_infos()
 
-            # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
-            self.info_process.terminate()
-            self.info_process = Process(target=functions.get_info_process,
-                                        args=(self.comm_skt, self.hosts[new_active_camera], self.COMM_PORT, self.info_queue,))
-            self.info_process.start()
+                # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
+                self.info_process.terminate()
+                self.info_process = Process(target=functions.get_info_process,
+                                            args=(self.comm_skt, self.hosts[new_active_camera], self.COMM_PORT, self.info_queue,))
+                self.info_process.start()
+            else:
+                pass
         else:
-            pass
+            msg = QtWidgets.QMessageBox()
+            msg.setText("Please stop preview before switching to another camera.")
+            msg.setWindowTitle("Choose error")
+            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
 
     def detect_cameras(self):
         # déclaration de la variable pour stocker les résultats
@@ -308,54 +311,116 @@ class Window(QtWidgets.QMainWindow):
                 self.camera_combo_box.addItem("Camera " + str(i + 1))
 
     def start_camera(self):
-        if not self.camera_activated:
-            self.camera_skt.send(b"start_camera")
-            self.camera_activated = True
+        if self.camera_activated:
+            msg = QtWidgets.QMessageBox()
+            msg.setText("Please stop camera before starting another recording.")
+            msg.setWindowTitle("Record error")
+            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+        else:
+            if self.active_preview:
+                msg = QtWidgets.QMessageBox()
+                msg.setText("Please stop preview before starting another recording.")
+                msg.setWindowTitle("Record error")
+                msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+                msg.setStandardButtons(QMessageBox.Ok)
+                msg.exec_()
+            else:
+                self.camera_skt.send(b"start_camera")
+                self.camera_activated = True
 
     def stop_camera(self):
-        if self.camera_activated:
-            self.camera_skt.send(b"stop_camera")
-            self.camera_activated = False
-
-    def start_cameras(self):
         if not self.camera_activated:
-            if len(self.hosts) == 1:
-                self.camera_skt.send(b"start_camera")
+            msg = QtWidgets.QMessageBox()
+            msg.setText("Please start camera before stopping it.")
+            msg.setWindowTitle("Record error")
+            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+        else:
+            if self.active_preview:
+                msg = QtWidgets.QMessageBox()
+                msg.setText("Please stop preview before stopping a recording.")
+                msg.setWindowTitle("Record error")
+                msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+                msg.setStandardButtons(QMessageBox.Ok)
+                msg.exec_()
             else:
-                for i in range(len(self.hosts)):
-                    if i == 0:
-                        self.camera_skt.send(b"start_camera")
-                    else:
-                        ip = self.hosts[i][0]
-                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                        s.connect((ip, self.CAMERA_PORT))
-                        s.send(b"start_camera")
-                        s.send(b"")
-                        s.shutdown(socket.SHUT_RDWR)
-            self.camera_activated = True
+                self.camera_skt.send(b"stop_camera")
+                self.camera_activated = False
+
+    # TODO À vérifier si le contrôle du GPIO se fait avec deux caméras
+    def start_cameras(self):
+        if self.camera_activated:
+            msg = QtWidgets.QMessageBox()
+            msg.setText("Please stop camera before starting another recording.")
+            msg.setWindowTitle("Record error")
+            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+        else:
+            if self.active_preview:
+                msg = QtWidgets.QMessageBox()
+                msg.setText("Please stop preview before starting another recording.")
+                msg.setWindowTitle("Record error")
+                msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+                msg.setStandardButtons(QMessageBox.Ok)
+                msg.exec_()
+            else:
+                if len(self.hosts) == 1:
+                    self.camera_skt.send(b"start_camera")
+                else:
+                    for i in range(len(self.hosts)):
+                        if i == 0:
+                            self.camera_skt.send(b"start_camera")
+                        else:
+                            ip = self.hosts[i][0]
+                            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                            s.connect((ip, self.CAMERA_PORT))
+                            s.send(b"start_camera")
+                            s.send(b"")
+                            s.shutdown(socket.SHUT_RDWR)
+                self.camera_activated = True
 
     def stop_cameras(self):
-        if self.camera_activated:
-            if len(self.hosts) == 1:
-                self.camera_skt.send(b"stop_camera")
+        if not self.camera_activated:
+            msg = QtWidgets.QMessageBox()
+            msg.setText("Please start camera before stopping it.")
+            msg.setWindowTitle("Record error")
+            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+        else:
+            if self.active_preview:
+                msg = QtWidgets.QMessageBox()
+                msg.setText("Please stop preview before stopping a recording.")
+                msg.setWindowTitle("Record error")
+                msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+                msg.setStandardButtons(QMessageBox.Ok)
+                msg.exec_()
             else:
-                for i in range(len(self.hosts)):
-                    if i == 0:
-                        self.camera_skt.send(b"stop_camera")
-                    else:
-                        ip = self.hosts[i][0]
-                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                        s.connect((ip, self.CAMERA_PORT))
-                        s.send(b"stop_camera")
-                        s.send(b"")
-                        s.shutdown(socket.SHUT_RDWR)
-            self.camera_activated = False
+                if len(self.hosts) == 1:
+                    self.camera_skt.send(b"stop_camera")
+                else:
+                    for i in range(len(self.hosts)):
+                        if i == 0:
+                            self.camera_skt.send(b"stop_camera")
+                        else:
+                            ip = self.hosts[i][0]
+                            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                            s.connect((ip, self.CAMERA_PORT))
+                            s.send(b"stop_camera")
+                            s.send(b"")
+                            s.shutdown(socket.SHUT_RDWR)
+                self.camera_activated = False
 
+    # TODO à regarder pourquoi ça plante en utilisant le moteur après un retour du menu avec deux caméras
     def manage_files(self):
         self.fileWindow = FileWindow(self.active_camera, self.comm_skt, self.hosts[self.active_camera], self.COMM_PORT,
-                                     self.hosts, self.active_camera)
+                                     self.hosts, self.path)
         if self.fileWindow.isVisible():
             self.fileWindow.hide()
         else:
@@ -372,12 +437,11 @@ class Window(QtWidgets.QMainWindow):
             self.info_process.terminate()
             self.info_process.join()
 
-            """# il est possible de quitter l'application sans avoir starter le process pour les previews
+            # il est possible de quitter l'application sans avoir starter le process pour les previews
             try:
-                self.preview_process.terminate()
-                self.preview_process.join()
+                self.preview_process.stop()
             except AttributeError:
-                pass"""
+                pass
             sys.exit()
         else:
             pass
@@ -411,55 +475,63 @@ class Window(QtWidgets.QMainWindow):
                           "\n Batterie restante: " + battery)
 
     def remove(self):
-        if len(self.hosts) > 1:
-            camera = self.hosts[self.active_camera]
-            num = camera[1]
-            ip = camera[0]
-            self.hosts.remove((ip, num))
-            self.camera_combo_box.clear()
-            for i in range(len(self.hosts)):
-                self.camera_combo_box.addItem("Camera " + str(i + 1))
-                ip = self.hosts[i][0]
-                num = i
-                self.hosts[i] = (ip, num)
-            self.active_camera = self.hosts[0][1]
+        if not self.active_preview:
+            if len(self.hosts) > 1:
+                camera = self.hosts[self.active_camera]
+                num = camera[1]
+                ip = camera[0]
+                self.hosts.remove((ip, num))
+                self.camera_combo_box.clear()
+                for i in range(len(self.hosts)):
+                    self.camera_combo_box.addItem("Camera " + str(i + 1))
+                    ip = self.hosts[i][0]
+                    num = i
+                    self.hosts[i] = (ip, num)
+                self.active_camera = self.hosts[0][1]
 
-            # on vient fermer les connexions en cours et on les redémarrent avec la bonne caméra
-            self.camera_skt.send(b"")
-            self.camera_skt.shutdown(socket.SHUT_RDWR)
-            self.camera_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.camera_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.camera_skt.connect((str(self.hosts[self.active_camera][0]), self.CAMERA_PORT_PORT))
-            self.comm_skt.send(b"")
-            self.comm_skt.shutdown(socket.SHUT_RDWR)
-            self.comm_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.comm_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.comm_skt.connect((str(self.hosts[self.active_camera][0]), self.COMM_PORT))
-            self.get_infos()
+                # on vient fermer les connexions en cours et on les redémarrent avec la bonne caméra
+                self.camera_skt.send(b"")
+                self.camera_skt.shutdown(socket.SHUT_RDWR)
+                self.camera_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.camera_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.camera_skt.connect((str(self.hosts[self.active_camera][0]), self.CAMERA_PORT_PORT))
+                self.comm_skt.send(b"")
+                self.comm_skt.shutdown(socket.SHUT_RDWR)
+                self.comm_skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.comm_skt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.comm_skt.connect((str(self.hosts[self.active_camera][0]), self.COMM_PORT))
+                self.get_infos()
 
-            # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
-            self.info_process.terminate()
-            self.info_process = Process(target=functions.get_info_process,
-                                        args=(self.comm_skt, self.hosts[self.active_camera], self.COMM_PORT, self.info_queue,))
-            self.info_process.start()
+                # stopper le process pour aller chercher l'info de la caméra et restarter avec la nouvelle caméra
+                self.info_process.terminate()
+                self.info_process = Process(target=functions.get_info_process,
+                                            args=(self.comm_skt, self.hosts[self.active_camera], self.COMM_PORT, self.info_queue,))
+                self.info_process.start()
+        else:
+            msg = QtWidgets.QMessageBox()
+            msg.setText("Please stop preview before removing a camera from the network.")
+            msg.setWindowTitle("Remove error")
+            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
 
 
 # classe pour la fenêtre de menu pour gérer les fichiers
 class FileWindow(QtWidgets.QWidget):
 
     # constructeur de la classe
-    def __init__(self, camera, skt, host, port, hosts, active_camera):
+    def __init__(self, camera, skt, host, port, hosts, local_path):
         super(FileWindow, self).__init__()
         self.camera = camera
         self.skt = skt
         self.host = host
         self.port = port
         self.hosts = hosts
-        self.active_camera = active_camera
+        self.local_path = local_path
         self.setFixedHeight(600)
         self.setFixedWidth(1000)
         self.setWindowTitle("Manage Files")
-        self.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+        self.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.local_path)))
 
         # déclaration de la variable pour garder la valeur du fichier sélectionné
         self.selected_files = []
@@ -565,7 +637,7 @@ class FileWindow(QtWidgets.QWidget):
             msg = QtWidgets.QMessageBox()
             msg.setText("Please select a file before downloading.")
             msg.setWindowTitle("Download error")
-            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.local_path)))
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
         else:
@@ -573,6 +645,13 @@ class FileWindow(QtWidgets.QWidget):
             for i in range(len(self.selected_files)):
                 files = files + self.selected_files[i] + ","
             self.skt.send(b"download_file_" + files.encode('utf-8'))
+
+        msg = QtWidgets.QMessageBox()
+        msg.setText("All selected file(s) have been downloaded!")
+        msg.setWindowTitle("Download message")
+        msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.local_path)))
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
 
     def download_all(self):
         if len(self.hosts) == 1:
@@ -590,12 +669,19 @@ class FileWindow(QtWidgets.QWidget):
                     s.send(b"")
                     s.shutdown(socket.SHUT_RDWR)
 
+        msg = QtWidgets.QMessageBox()
+        msg.setText("All files have been downloaded.")
+        msg.setWindowTitle("Download message")
+        msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.local_path)))
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+
     def delete(self):
         if not self.selected_files:
             msg = QtWidgets.QMessageBox()
-            msg.setText("Please select a file before downloading.")
+            msg.setText("Please select a file before deleting.")
             msg.setWindowTitle("Delete error")
-            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.path)))
+            msg.setWindowIcon(QtGui.QIcon("{}/ressource/protolabLogo.png".format(self.local_path)))
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
         else:

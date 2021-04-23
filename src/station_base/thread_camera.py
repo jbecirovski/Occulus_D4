@@ -4,22 +4,22 @@ import threading
 import time
 import socket
 
+from PyQt5 import QtGui
 
-# on lui passe en argument premièrement l'objet de preview, le socket, ensuite l'adresse ip et finalement le port
+
+# on lui passe en argument premièrement l'objet de preview, le socket, ensuite et le path du fichier
 class CameraThread(threading.Thread):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._stop_event = threading.Event()
-        for x in args:
+        for x in range(len(kwargs['args'])):
             if x == 0:
-                self.preview = x[0]
+                self.preview = kwargs['args'][0]
             elif x == 1:
-                self.skt = x[1]
-            elif x == 2:
-                self.ip = x[2]
+                self.skt = kwargs['args'][1]
             else:
-                self.port = x[3]
+                self.path = kwargs['args'][2]
 
     def stop(self):
         self._stop_event.set()
@@ -32,4 +32,7 @@ class CameraTask(CameraThread):
     def run(self):
         while not self.stopped():
             self.skt.send(b"get_preview")
+            data = self.skt.recv(1024)
+            if data.decode('utf-8') == "preview_sent":
+                self.preview.setPixmap(QtGui.QPixmap("{}/preview.jpg".format(self.path)))
             time.sleep(1)

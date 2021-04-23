@@ -4,8 +4,6 @@ import threading
 import time
 import subprocess
 
-import RPi.GPIO as GPIO
-
 from picamera import PiCamera
 from smbus2 import SMBus
 
@@ -167,12 +165,13 @@ class BMSCom:
 def write_file(batt_manager):
     while True:
         time.sleep(900)
-        battery = str(batt_manager.get_charge1000())
+        battery = batt_manager.get_charge1000()
+        string_battery = str(battery)
         temps = time.localtime()
         temps_modifie = time.strftime("%H:%M:%S", temps)
         file = open("/home/pi/test.txt", "at")
-        file.write("{}, pourcentage de la batterie: {}%".format(temps_modifie, battery))
-        if int(battery) <= 5:
+        file.write("{}, pourcentage de la batterie: {}%".format(temps_modifie, string_battery))
+        if battery <= 5.0:
             file.write("ALERT! BATTERY BELOW 5%! I'M ALMOST EMPTY!")
         file.close()
 
@@ -201,20 +200,15 @@ battery = str(battery_manager.get_charge1000())
 file = open("/home/pi/test.txt", "at")
 temps = time.localtime()
 temps_modifie = time.strftime("%H:%M:%S", temps)
-file.write("Début du test à {} avec la charge {}%".format(temps_modifie, battery))
+file.write("Début du test à {} avec la charge {}%\n".format(temps_modifie, battery))
 file.close()
 
 # on vient garder un compte général du temps, juste pour avoir une idée de on est rendu où
 count = 0
 
 # on vient initialiser les thread pour écrire la charge dans le fichier et bouger les moteurs
-threading.Thread(target=write_file, args=(battery_manager,), daemon=True)
-threading.Thread(target=move_motor, args=(), daemon=True)
-
-# on vient ouvrir la LED verte pour dire que la caméra est prête à enregistrer
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(36, GPIO.OUT)
-GPIO.output(36, GPIO.HIGH)
+threading.Thread(target=write_file, args=(battery_manager,), daemon=True).start()
+threading.Thread(target=move_motor, args=(), daemon=True).start()
 
 # on vient démarrer la caméra
 camera.start_recording("/home/pi/test_longevite.h264")
