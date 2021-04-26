@@ -4,8 +4,6 @@ import socket
 import time
 import queue
 
-from PyQt5 import QtGui
-
 
 def get_wifi_ip_address():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -66,29 +64,3 @@ def update_infos_thread(info_queue, info):
                 pass
         except queue.Empty:
             time.sleep(30)
-
-
-"""def update_preview_thread(preview, path):
-    prev = False
-    while True:
-        if not prev:
-            try:
-                file = open("{}/preview.jpg".format(path), "r")
-                preview.setPixmap(QtGui.QPixmap("{}/preview.jpg".format(path)))
-                prev = True
-            except OSError:
-                time.sleep(1)
-        else:
-            try:
-                file = open("{}/preview1.jpg".format(path), "r")
-                preview.setPixmap(QtGui.QPixmap("{}/preview1.jpg".format(path)))
-                prev = False
-            except OSError:
-                time.sleep(1)
-    while True:
-        try:
-            file = open("{}/preview.jpg".format(path), "rb")
-            preview.setPixmap(QtGui.QPixmap("{}/preview.jpg".format(path)))
-        except OSError as e:
-            time.sleep(1)"""
-

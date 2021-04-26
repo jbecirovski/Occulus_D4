@@ -90,7 +90,6 @@ class Window(QtWidgets.QMainWindow):
 
         # déclaration des process pour aller chercher l'information des caméras
         self.info_process = Process()
-        # self.preview_process = Process()
 
         # déclaration des threads pour faire du aller updater le UI
         self.info_thread = threading.Thread()
@@ -350,7 +349,6 @@ class Window(QtWidgets.QMainWindow):
                 self.camera_skt.send(b"stop_camera")
                 self.camera_activated = False
 
-    # TODO À vérifier si le contrôle du GPIO se fait avec deux caméras
     def start_cameras(self):
         if self.camera_activated:
             msg = QtWidgets.QMessageBox()
@@ -417,7 +415,6 @@ class Window(QtWidgets.QMainWindow):
                             s.shutdown(socket.SHUT_RDWR)
                 self.camera_activated = False
 
-    # TODO à regarder pourquoi ça plante en utilisant le moteur après un retour du menu avec deux caméras
     def manage_files(self):
         self.fileWindow = FileWindow(self.active_camera, self.comm_skt, self.hosts[self.active_camera], self.COMM_PORT,
                                      self.hosts, self.path)
@@ -551,7 +548,6 @@ class FileWindow(QtWidgets.QWidget):
         self.selected_file_label = QtWidgets.QLabel(self)
 
         # on va regarder les fichiers de la caméra
-        # files = self.refresh()
         self.refresh()
 
         self.create_ui()

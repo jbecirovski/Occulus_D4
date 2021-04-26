@@ -5,7 +5,6 @@ import subprocess
 import i2c_master
 
 from ftplib import FTP
-from smbus2 import SMBus
 
 # on définit les paramètres pour la communication socket
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
