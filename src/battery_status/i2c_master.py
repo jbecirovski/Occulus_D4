@@ -36,8 +36,6 @@ class BMSCom:
         if charge > 80:
             charge = 80
         charge = 1.25*charge  # charge will be at its maximum at 80%
-        if charge > 100:
-            charge = 100  # make sure that the maximum charge is not higher than 100%
         return charge
 
     # gets battery charge in % with a 0.1% precision
@@ -47,8 +45,6 @@ class BMSCom:
         if charge > 80:
             charge = 80
         charge = 1.25*charge  # charge will be at its maximum at 80%
-        if charge > 100:
-            charge = 100  # make sure that the maximum charge is not higher than 100%
         return charge
 
     # separate a number in two Bytes (data Byte low and data_byte_high)
