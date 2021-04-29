@@ -58,7 +58,7 @@ while True:
             elif data[0] == "move":
                 if command == "move_up":
                     vertical = vertical + 5
-                    if vertical <= 90:
+                    if vertical <= 70:
                         cmd = "python3 servomotor_master.py 33 {}".format(str(vertical))
                         subprocess.Popen(cmd, shell=True)
                     else:
@@ -82,7 +82,7 @@ while True:
 
                 elif command == "move_down":
                     vertical = vertical - 5
-                    if vertical >= 0:
+                    if vertical >= 20:
                         cmd = "python3 servomotor_master.py 33 {}".format(str(vertical))
                         subprocess.Popen(cmd, shell=True)
                     else:
